@@ -1,0 +1,33 @@
+# Dados (regeneráveis pelo pipeline — não versionar)
+data/*.duckdb
+data/*.duckdb.wal
+data/prf_cache/
+data/*.log
+
+# Scripts de debug/inspeção descartáveis
+check_*.py
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Ambientes virtuais
+.venv/
+venv/
+env/
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Config local do Claude Code
+.claude/
