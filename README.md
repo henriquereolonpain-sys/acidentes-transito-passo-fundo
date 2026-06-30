@@ -1,6 +1,6 @@
-# 🚦 Mapa de Acidentes — Passo Fundo, RS
+#  Mapa de Acidentes — Passo Fundo, RS
 
-Dashboard interativo que mapeia acidentes de trânsito em **Passo Fundo e região (RS)**, agregando notícias de múltiplos veículos locais e dados oficiais da Polícia Rodoviária Federal. O objetivo é transformar matérias dispersas em um panorama navegável — onde, quando e com que gravidade os acidentes acontecem.
+Dashboard interativo que mapeia acidentes de trânsito em **Passo Fundo e região (RS)**, agregando notícias de múltiplos veículos locais e dados oficiais da Polícia Rodoviária Federal. O objetivo é transformar matérias dispersas em um panorama navegável aonde, quando e com que gravidade os acidentes acontecem.
 
 > Dados de **2014 a 2026** · **7.300+** matérias de 3 fontes · **1.150** registros oficiais da PRF · geocodificação automática · validação cruzada entre fontes.
 
@@ -8,7 +8,7 @@ Dashboard interativo que mapeia acidentes de trânsito em **Passo Fundo e regiã
 
 ## Por que existe
 
-Acidentes de trânsito são noticiados todos os dias pela imprensa local, mas a informação fica presa em matérias soltas — impossível enxergar padrões. Este projeto coleta essas notícias, extrai *onde* e *quando* cada acidente aconteceu, cruza com a base oficial da PRF e plota tudo num mapa. O resultado responde perguntas que nenhuma matéria individual responde:
+Acidentes de trânsito são noticiados todos os dias pela imprensa local, mas a informação fica presa em matérias soltas / impossível enxergar padrões. Este projeto coleta essas notícias, extrai *onde* e *quando* cada acidente aconteceu, cruza com a base oficial da PRF e plota tudo num mapa. O resultado responde perguntas que nenhuma matéria individual responde:
 
 - Quais cruzamentos concentram mais acidentes?
 - Os fatais estão nas rodovias ou nas vias urbanas?
@@ -57,21 +57,10 @@ Cada acidente preserva os **links das matérias originais** — a fonte é sempr
 - **App:** `Streamlit` + `folium`
 - **Testes:** `pytest`
 
-## Rodando localmente
 
-```bash
-# 1. Instalar dependências
-pip install -r requirements.txt
-
-# 2. Coletar e processar os dados
-python run_pipeline.py        # scraping + geocoding + dedup + confiança
-python run_prf.py             # baixa e integra os dados da PRF
-
-# 3. Subir o dashboard
-streamlit run app/streamlit_app.py
 ```
 
-O app abre em `http://localhost:8501`.
+O app abre em `(https://acidentes-transito-pf.streamlit.app/)`.
 
 ## Estrutura
 
@@ -94,7 +83,6 @@ Cobrem as partes mais frágeis — extração de localização, classificação 
 ## Roadmap
 
 - [ ] Integrar base de acidentes urbanos da Secretaria de Segurança de Passo Fundo
-- [ ] Aplicar o km extraído na geocodificação de rodovias (ponto exato vs. centro da via)
 - [ ] Melhorar o casamento de acidentes entre fontes diferentes
 - [ ] Atualização automática diária
 
