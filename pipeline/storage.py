@@ -142,7 +142,7 @@ def buscar_sem_geocodificar() -> list[dict]:
     with _conexao() as con:
         rows = con.execute(
             """
-            SELECT id, loc_endereco, loc_tipo, loc_rua1, loc_rua2, municipio
+            SELECT id, loc_endereco, loc_tipo, loc_rua1, loc_rua2, municipio, km_rodovia
             FROM acidentes
             WHERE loc_endereco IS NOT NULL
               AND geocodificado = FALSE
@@ -157,6 +157,7 @@ def buscar_sem_geocodificar() -> list[dict]:
             "loc_rua1": r[3],
             "loc_rua2": r[4],
             "municipio": r[5] or "Passo Fundo",
+            "km_rodovia": r[6],
         }
         for r in rows
     ]

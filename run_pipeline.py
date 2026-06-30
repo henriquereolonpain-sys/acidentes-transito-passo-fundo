@@ -93,6 +93,7 @@ def geocodificar_pendentes():
             rua1=reg.get("loc_rua1"),
             rua2=reg.get("loc_rua2"),
             municipio=reg.get("municipio", "Passo Fundo"),
+            km_rodovia=reg.get("km_rodovia"),
         )
         if coords:
             storage.atualizar_coordenadas(reg["id"], coords[0], coords[1])

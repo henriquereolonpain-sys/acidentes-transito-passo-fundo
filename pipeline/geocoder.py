@@ -111,23 +111,48 @@ def _nominatim_geocode(endereco: str, tentativas: int = 2) -> tuple[float, float
     return None
 
 
+_RE_BR = re.compile(r"\bBR-?\s*(\d{2,3})\b", re.IGNORECASE)
+
+
+def _parse_km(km_rodovia) -> float | None:
+    """'365,6' / '220' / 'km 14' -> float."""
+    if km_rodovia is None:
+        return None
+    m = re.search(r"(\d+(?:[,.]\d+)?)", str(km_rodovia))
+    if not m:
+        return None
+    return float(m.group(1).replace(",", "."))
+
+
 def geocodificar(endereco: str, loc_tipo: str = None,
                  rua1: str = None, rua2: str = None,
-                 municipio: str = "Passo Fundo") -> tuple[float, float] | None:
+                 municipio: str = "Passo Fundo",
+                 km_rodovia=None) -> tuple[float, float] | None:
     """
     Geocodifica um endereço usando a estratégia mais adequada ao tipo de local.
 
-    Para cruzamentos: tenta Overpass primeiro (mais preciso), cai no Nominatim.
-    Para o resto: Nominatim direto.
+    - Cruzamentos: Overpass primeiro (mais preciso), cai no Nominatim.
+    - Rodovia federal (BR) com km: usa a referência km->coordenada da PRF (ponto exato).
+    - Resto: Nominatim direto.
     """
     if loc_tipo == "cruzamento" and rua1 and rua2:
         coords = _overpass_cruzamento(rua1, rua2, municipio)
         if coords:
             return coords
-        # fallback: tenta geocodar só a rua1
         logger.debug(f"Overpass falhou, tentando Nominatim para '{rua1}, {municipio}'")
         coords = _nominatim_geocode(f"{rua1}, {municipio}, RS, Brasil")
         if coords:
             return coords
+
+    # Rodovia federal com km conhecido: usa o ponto exato da referência PRF
+    if loc_tipo == "rodovia" and km_rodovia is not None:
+        m_br = _RE_BR.search(endereco or "")
+        km = _parse_km(km_rodovia)
+        if m_br and km is not None:
+            from pipeline.km_ref import buscar_coord
+            coords = buscar_coord(m_br.group(1), km)
+            if coords:
+                logger.debug(f"km_ref: BR-{m_br.group(1)} km {km} -> {coords}")
+                return coords
 
     return _nominatim_geocode(endereco)
