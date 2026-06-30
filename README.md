@@ -1,6 +1,6 @@
 #  Mapa de Acidentes — Passo Fundo, RS
 
-Dashboard interativo que mapeia acidentes de trânsito em **Passo Fundo e região (RS)**, agregando notícias de múltiplos veículos locais e dados oficiais da Polícia Rodoviária Federal. O objetivo é transformar matérias dispersas em um panorama navegável aonde, quando e com que gravidade os acidentes acontecem.
+Dashboard interativo que mapeia acidentes de trânsito em **Passo Fundo e região (RS)**, agregando notícias de múltiplos veículos locais e dados oficiais da Polícia Rodoviária Federal. O objetivo é transformar matérias dispersas em um panorama navegável: onde, quando e com que gravidade os acidentes acontecem.
 
 > Dados de **2014 a 2026** · **7.300+** matérias de 3 fontes · **1.150** registros oficiais da PRF · geocodificação automática · validação cruzada entre fontes.
 
@@ -8,7 +8,7 @@ Dashboard interativo que mapeia acidentes de trânsito em **Passo Fundo e regiã
 
 ## Por que existe
 
-Acidentes de trânsito são noticiados todos os dias pela imprensa local, mas a informação fica presa em matérias soltas / impossível enxergar padrões. Este projeto coleta essas notícias, extrai *onde* e *quando* cada acidente aconteceu, cruza com a base oficial da PRF e plota tudo num mapa. O resultado responde perguntas que nenhuma matéria individual responde:
+Acidentes de trânsito são noticiados todos os dias pela imprensa local, mas a informação fica presa em matérias soltas — impossível enxergar padrões. Este projeto coleta essas notícias, extrai *onde* e *quando* cada acidente aconteceu, cruza com a base oficial da PRF e plota tudo num mapa. O resultado responde perguntas que nenhuma matéria individual responde:
 
 - Quais cruzamentos concentram mais acidentes?
 - Os fatais estão nas rodovias ou nas vias urbanas?
@@ -57,10 +57,31 @@ Cada acidente preserva os **links das matérias originais** — a fonte é sempr
 - **App:** `Streamlit` + `folium`
 - **Testes:** `pytest`
 
+## App online
 
+Versão pública (sempre no ar): **https://acidentes-transito-pf.streamlit.app/**
+
+## Rodando localmente
+
+O repositório já inclui o banco de dados (`data/acidentes.duckdb`), então o app
+roda direto após clonar — não é preciso coletar nada para visualizar.
+
+```bash
+git clone git@github.com:henriquereolonpain-sys/acidentes-transito-passo-fundo.git
+cd acidentes-transito-passo-fundo
+pip install -r requirements.txt
+streamlit run app/streamlit_app.py
 ```
 
-O app abre em `(https://acidentes-transito-pf.streamlit.app/)`.
+O app abre em `http://localhost:8501`.
+
+### Reconstruir os dados do zero (opcional)
+
+```bash
+python run_pipeline.py    # scraping + geocoding + dedup + confiança
+python run_prf.py         # baixa e integra os dados da PRF (via gdown)
+python run_diario.py      # atualização incremental (só o que é novo)
+```
 
 ## Estrutura
 
