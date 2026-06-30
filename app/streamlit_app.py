@@ -26,19 +26,17 @@ st.set_page_config(
 PASSO_FUNDO_CENTER = [-28.2576, -52.4086]
 
 SEVERIDADE_CONFIG = {
-    "fatal":        {"color": "darkred",  "icon": "skull-crossbones", "label": "Fatal"},
-    "grave":        {"color": "orange",   "icon": "exclamation",      "label": "Grave"},
-    "colisao":      {"color": "blue",     "icon": "car-crash",        "label": "Colisão"},
-    "fiscalizacao": {"color": "gray",     "icon": "shield-alt",       "label": "Fiscalização"},
+    "fatal":   {"color": "darkred", "icon": "skull-crossbones", "label": "Fatal"},
+    "grave":   {"color": "orange",  "icon": "exclamation",      "label": "Grave"},
+    "colisao": {"color": "blue",    "icon": "car-crash",        "label": "Colisão"},
 }
 
-SEVERIDADE_PESO = {"fatal": 3.0, "grave": 2.0, "colisao": 1.0, "fiscalizacao": 0.3}
+SEVERIDADE_PESO = {"fatal": 3.0, "grave": 2.0, "colisao": 1.0}
 
 SEV_COLORS = {
-    "Fatal":        "#dc2626",
-    "Grave":        "#ea580c",
-    "Colisão":      "#3b82f6",
-    "Fiscalização": "#6b7280",
+    "Fatal":   "#dc2626",
+    "Grave":   "#ea580c",
+    "Colisão": "#3b82f6",
 }
 
 # ── CSS ───────────────────────────────────────────────────────────────────────
@@ -48,33 +46,66 @@ st.markdown("""
 
 html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
 
+.block-container { padding-top: 1.5rem !important; }
+
 .hero {
-    background: linear-gradient(135deg, #1a2e4a 0%, #2c4a6e 100%);
-    border-radius: 12px;
-    padding: 22px 28px;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
+    background: #c8c8c8;
+    border-radius: 14px;
+    padding: 36px 40px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #bdbdbd;
+    text-align: left;
 }
-.hero-icon { font-size: 36px; line-height: 1; }
 .hero-title {
-    font-size: 22px;
+    font-size: 32px;
     font-weight: 700;
-    color: #ffffff !important;
-    margin: 0 0 5px 0;
-    line-height: 1.2;
+    color: #1a1a1a !important;
+    margin: 0 0 8px 0;
+    line-height: 1.15;
+    letter-spacing: -0.5px;
+    position: relative;
+    z-index: 2;
+}
+.hero-objective {
+    font-size: 15px;
+    color: #222;
+    margin: 0 0 10px 0;
+    position: relative;
+    z-index: 2;
 }
 .hero-sub {
     font-size: 12px;
-    color: rgba(255,255,255,0.65);
+    color: #555550;
     margin: 0;
+    position: relative;
+    z-index: 2;
 }
-.hero-sub code {
-    background: rgba(255,255,255,0.15);
-    padding: 1px 5px;
-    border-radius: 3px;
-    font-size: 11px;
+.hero-bg-stripe {
+    position: absolute;
+    top: 0; bottom: 0; left: 0; right: 0;
+    border-radius: 14px;
+}
+.hero-bg-stripe.layer1 {
+    opacity: 0.18;
+    background: repeating-linear-gradient(
+        -45deg,
+        #dc2626,
+        #dc2626 12px,
+        transparent 12px,
+        transparent 28px
+    );
+}
+.hero-bg-stripe.layer2 {
+    opacity: 0.13;
+    background: repeating-linear-gradient(
+        45deg,
+        #f5c400,
+        #f5c400 12px,
+        transparent 12px,
+        transparent 28px
+    );
 }
 
 .kpi {
@@ -289,27 +320,27 @@ def gerar_insights(df: pd.DataFrame, df_prf) -> list[tuple]:
         if not datas_validas.empty:
             dia = datas_validas.dt.dayofweek.value_counts().idxmax()
             n_dia = datas_validas.dt.dayofweek.value_counts().iloc[0]
-            insights.append(("📅", f"<b>{DIAS[dia].capitalize()}</b> é o dia com mais registros de acidentes ({n_dia})"))
+            insights.append(("", f"<b>{DIAS[dia].capitalize()}</b> é o dia com mais registros de acidentes ({n_dia})"))
 
     # Hora de pico (PRF)
     if df_prf is not None and not df_prf.empty and "hora_acidente" in df_prf.columns:
         horas = pd.to_numeric(df_prf["hora_acidente"].astype(str).str[:2], errors="coerce").dropna()
         if not horas.empty:
             h = int(horas.value_counts().idxmax())
-            insights.append(("🕐", f"Pico nas rodovias federais: <b>{h:02d}h–{h+1:02d}h</b>"))
+            insights.append(("", f"Pico nas rodovias federais: <b>{h:02d}h–{h+1:02d}h</b>"))
 
     # Taxa de fatalidade
     if len(df) > 0:
         n_fatal = len(df[df["severidade"] == "fatal"])
         taxa = n_fatal / len(df) * 100
-        insights.append(("⚠️", f"<b>{taxa:.0f}%</b> dos acidentes registrados resultaram em morte"))
+        insights.append(("", f"<b>{taxa:.0f}%</b> dos acidentes registrados resultaram em morte"))
 
     # BR mais perigosa
     if df_prf is not None and not df_prf.empty and "br" in df_prf.columns:
         br_mais = str(df_prf["br"].value_counts().idxmax())
         n_br = df_prf["br"].value_counts().iloc[0]
         fatais_br = len(df_prf[(df_prf["br"].astype(str) == br_mais) & (df_prf["severidade"] == "fatal")])
-        insights.append(("🛣️", f"<b>BR-{br_mais}</b>: rodovia com mais acidentes ({n_br} registros, {fatais_br} fatais)"))
+        insights.append(("", f"<b>BR-{br_mais}</b>: rodovia com mais acidentes ({n_br} registros, {fatais_br} fatais)"))
 
     # Cruzamento mais perigoso
     if "loc_tipo" in df.columns:
@@ -318,7 +349,7 @@ def gerar_insights(df: pd.DataFrame, df_prf) -> list[tuple]:
             top = df_c["loc_endereco"].value_counts()
             nome = top.index[0]
             nome_curto = nome[:45] + "…" if len(nome) > 45 else nome
-            insights.append(("📍", f"Cruzamento crítico: <b>{nome_curto}</b> ({top.iloc[0]} acidentes)"))
+            insights.append(("", f"Cruzamento crítico: <b>{nome_curto}</b> ({top.iloc[0]} acidentes)"))
 
     return insights
 
@@ -332,6 +363,12 @@ def render_mapa(df: pd.DataFrame, modo: str, df_prf: pd.DataFrame = None) -> fol
 
     if modo == "Heatmap (ponderado por gravidade)":
         heat_data = [[r["latitude"], r["longitude"], r["peso"]] for _, r in df.iterrows()]
+        # inclui PRF no mesmo heatmap
+        if df_prf is not None and not df_prf.empty:
+            heat_data += [
+                [r["latitude"], r["longitude"], r["peso"]]
+                for _, r in df_prf.iterrows()
+            ]
         HeatMap(heat_data, radius=20, blur=15, min_opacity=0.4,
                 gradient={"0.2": "blue", "0.5": "orange", "1.0": "red"}).add_to(m)
 
@@ -350,22 +387,21 @@ def render_mapa(df: pd.DataFrame, modo: str, df_prf: pd.DataFrame = None) -> fol
                 tooltip=_tooltip_html(row),
                 icon=folium.Icon(color=cfg["color"], icon="circle", prefix="fa"),
             ).add_to(clusters[sev])
-        folium.LayerControl().add_to(m)
 
-    if df_prf is not None and not df_prf.empty:
-        prf_group = folium.FeatureGroup(name="PRF — Rodovias Federais", show=True)
-        for _, row in df_prf.iterrows():
-            sev = row.get("severidade", "colisao")
-            cor = {"fatal": "black", "grave": "darkred", "colisao": "cadetblue"}.get(sev, "cadetblue")
-            folium.CircleMarker(
-                location=[row["latitude"], row["longitude"]],
-                radius=6 if sev == "fatal" else 4,
-                color=cor, fill=True, fill_opacity=0.8,
-                popup=folium.Popup(_popup_prf(row), max_width=280),
-                tooltip=f"PRF BR-{row.get('br','?')} | {sev}",
-            ).add_to(prf_group)
-        prf_group.add_to(m)
-        folium.LayerControl(collapsed=False).add_to(m)
+        # no modo marcadores, PRF aparece como círculos sobrepostos
+        if df_prf is not None and not df_prf.empty:
+            prf_group = folium.FeatureGroup(name="PRF — Rodovias Federais", show=True)
+            for _, row in df_prf.iterrows():
+                sev = row.get("severidade", "colisao")
+                cor = {"fatal": "black", "grave": "darkred", "colisao": "cadetblue"}.get(sev, "cadetblue")
+                folium.CircleMarker(
+                    location=[row["latitude"], row["longitude"]],
+                    radius=6 if sev == "fatal" else 4,
+                    color=cor, fill=True, fill_opacity=0.8,
+                    popup=folium.Popup(_popup_prf(row), max_width=280),
+                    tooltip=f"PRF BR-{row.get('br','?')} | {sev}",
+                ).add_to(prf_group)
+            prf_group.add_to(m)
 
     return m
 
@@ -373,14 +409,11 @@ def render_mapa(df: pd.DataFrame, modo: str, df_prf: pd.DataFrame = None) -> fol
 # ── Hero header ───────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="hero">
-  <span class="hero-icon">🚦</span>
-  <div>
-    <p class="hero-title">Mapa de Acidentes — Passo Fundo e região, RS</p>
-    <p class="hero-sub">
-      Henrique Pain &nbsp;|&nbsp; rdplanalto.com · GZH · Uirapuru · PRF (dados abertos)
-      &nbsp;|&nbsp; Atualizar: <code>python run_pipeline.py</code>
-    </p>
-  </div>
+  <div class="hero-bg-stripe layer1"></div>
+  <div class="hero-bg-stripe layer2"></div>
+  <p class="hero-title">Mapa de Acidentes — Passo Fundo e região, RS</p>
+  <p class="hero-objective">Monitoramento contínuo de acidentes de trânsito para embasar políticas públicas de segurança viária</p>
+  <p class="hero-sub">Henrique Pain &nbsp;|&nbsp; rdplanalto.com · GZH · Uirapuru · PRF (dados abertos)</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -405,11 +438,13 @@ with st.sidebar:
     col_d1, col_d2 = st.columns(2)
     with col_d1:
         data_inicio = st.date_input(
-            "De", value=data_min.date() if pd.notna(data_min) else date(2020, 1, 1)
+            "De", value=data_min.date() if pd.notna(data_min) else date(2020, 1, 1),
+            format="DD/MM/YYYY",
         )
     with col_d2:
         data_fim = st.date_input(
-            "Até", value=data_max.date() if pd.notna(data_max) else date.today()
+            "Até", value=data_max.date() if pd.notna(data_max) else date.today(),
+            format="DD/MM/YYYY",
         )
 
     municipios_disp = sorted(df_completo["municipio"].dropna().unique().tolist())
@@ -422,7 +457,7 @@ with st.sidebar:
     st.markdown("**Severidade**")
     severidades_sel = []
     for sev, cfg in SEVERIDADE_CONFIG.items():
-        if st.checkbox(cfg["label"], value=(sev != "fiscalizacao"), key=f"sev_{sev}"):
+        if st.checkbox(cfg["label"], value=True, key=f"sev_{sev}"):
             severidades_sel.append(sev)
 
     modo_mapa = st.radio(
@@ -432,7 +467,7 @@ with st.sidebar:
     )
 
     mostrar_prf = st.toggle(
-        "Camada PRF (BR federais)", value=True,
+        "Acidentes em rodovias", value=True,
         help="Acidentes em rodovias federais — dados oficiais PRF 2015-2024"
     )
 
@@ -444,9 +479,6 @@ with st.sidebar:
     if prf_stats["total"] > 0:
         st.metric("PRF (BR federais)", prf_stats["total"],
                   help=f"{prf_stats['ano_min']}–{prf_stats['ano_max']} | {prf_stats['fatais']} fatais")
-    if st.button("Limpar cache"):
-        st.cache_data.clear()
-        st.rerun()
 
 # ── Filtragem ─────────────────────────────────────────────────────────────────
 df = filtrar(df_completo, data_inicio, data_fim, municipios_sel, severidades_sel)
@@ -488,8 +520,7 @@ if insights:
     cols_i = st.columns(len(insights))
     for col, (emoji, texto) in zip(cols_i, insights):
         col.markdown(
-            f'<div class="ic"><div class="ic-emoji">{emoji}</div>'
-            f'<div class="ic-text">{texto}</div></div>',
+            f'<div class="ic"><div class="ic-text">{texto}</div></div>',
             unsafe_allow_html=True,
         )
     st.markdown("<br>", unsafe_allow_html=True)
