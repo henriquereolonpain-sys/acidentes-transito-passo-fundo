@@ -6,4 +6,5 @@ streamlit==1.40.2
 folium==0.18.0
 streamlit-folium==0.23.1
 pandas==2.2.3
+altair==5.5.0
 gdown>=5.1.0

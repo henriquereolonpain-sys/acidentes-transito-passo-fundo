@@ -3,6 +3,9 @@ data/*.duckdb
 data/*.duckdb.wal
 data/prf_cache/
 data/*.log
+# Exceção: o banco principal vai versionado para o deploy no Streamlit Cloud
+# (snapshot ~10MB; atualizado manualmente quando quiser refrescar o demo)
+!data/acidentes.duckdb
 
 # Scripts de debug/inspeção descartáveis
 check_*.py

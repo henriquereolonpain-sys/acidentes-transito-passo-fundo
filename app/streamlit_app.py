@@ -132,6 +132,18 @@ section[data-testid="stSidebar"] h2 {
     border-top: 1px solid #e2e8f0;
     margin-top: 20px;
 }
+
+/* Insight cards */
+.ic {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px 14px;
+    height: 100%;
+}
+.ic-emoji { font-size: 20px; margin-bottom: 5px; }
+.ic-text  { font-size: 12px; color: #374151; line-height: 1.5; }
+.ic-text b { color: #0f172a; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -263,6 +275,52 @@ def _popup_prf(row) -> str:
       <br><small style="color:#888">Fonte: PRF — dados abertos gov.br</small>
     </div>
     """
+
+
+def gerar_insights(df: pd.DataFrame, df_prf) -> list[tuple]:
+    """Retorna lista de (emoji, html) com insights automáticos dos dados filtrados."""
+    insights = []
+    DIAS = {0: "segunda", 1: "terça", 2: "quarta", 3: "quinta",
+            4: "sexta", 5: "sábado", 6: "domingo"}
+
+    # Dia da semana com mais acidentes (notícias)
+    if not df.empty:
+        datas_validas = df["data_publicacao"].dropna()
+        if not datas_validas.empty:
+            dia = datas_validas.dt.dayofweek.value_counts().idxmax()
+            n_dia = datas_validas.dt.dayofweek.value_counts().iloc[0]
+            insights.append(("📅", f"<b>{DIAS[dia].capitalize()}</b> é o dia com mais registros de acidentes ({n_dia})"))
+
+    # Hora de pico (PRF)
+    if df_prf is not None and not df_prf.empty and "hora_acidente" in df_prf.columns:
+        horas = pd.to_numeric(df_prf["hora_acidente"].astype(str).str[:2], errors="coerce").dropna()
+        if not horas.empty:
+            h = int(horas.value_counts().idxmax())
+            insights.append(("🕐", f"Pico nas rodovias federais: <b>{h:02d}h–{h+1:02d}h</b>"))
+
+    # Taxa de fatalidade
+    if len(df) > 0:
+        n_fatal = len(df[df["severidade"] == "fatal"])
+        taxa = n_fatal / len(df) * 100
+        insights.append(("⚠️", f"<b>{taxa:.0f}%</b> dos acidentes registrados resultaram em morte"))
+
+    # BR mais perigosa
+    if df_prf is not None and not df_prf.empty and "br" in df_prf.columns:
+        br_mais = str(df_prf["br"].value_counts().idxmax())
+        n_br = df_prf["br"].value_counts().iloc[0]
+        fatais_br = len(df_prf[(df_prf["br"].astype(str) == br_mais) & (df_prf["severidade"] == "fatal")])
+        insights.append(("🛣️", f"<b>BR-{br_mais}</b>: rodovia com mais acidentes ({n_br} registros, {fatais_br} fatais)"))
+
+    # Cruzamento mais perigoso
+    if "loc_tipo" in df.columns:
+        df_c = df[df["loc_tipo"] == "cruzamento"]
+        if not df_c.empty:
+            top = df_c["loc_endereco"].value_counts()
+            nome = top.index[0]
+            nome_curto = nome[:45] + "…" if len(nome) > 45 else nome
+            insights.append(("📍", f"Cruzamento crítico: <b>{nome_curto}</b> ({top.iloc[0]} acidentes)"))
+
+    return insights
 
 
 def render_mapa(df: pd.DataFrame, modo: str, df_prf: pd.DataFrame = None) -> folium.Map:
@@ -424,6 +482,18 @@ for col, cls, lbl, val in [
 
 st.markdown("<br>", unsafe_allow_html=True)
 
+# ── Insights automáticos ──────────────────────────────────────────────────────
+insights = gerar_insights(df, df_prf_filtrado)
+if insights:
+    cols_i = st.columns(len(insights))
+    for col, (emoji, texto) in zip(cols_i, insights):
+        col.markdown(
+            f'<div class="ic"><div class="ic-emoji">{emoji}</div>'
+            f'<div class="ic-text">{texto}</div></div>',
+            unsafe_allow_html=True,
+        )
+    st.markdown("<br>", unsafe_allow_html=True)
+
 # ── Mapa ──────────────────────────────────────────────────────────────────────
 st.markdown('<p class="stitle">Mapa</p>', unsafe_allow_html=True)
 
@@ -501,6 +571,61 @@ with col_mes:
             st.altair_chart(chart_mes, use_container_width=True)
     except Exception as e:
         st.error(f"Erro: {e}")
+
+# ── PRF: heatmap dia × hora  +  top causas ───────────────────────────────────
+if df_prf_filtrado is not None and not df_prf_filtrado.empty:
+    st.markdown("---")
+    col_heat, col_causa = st.columns([6, 4])
+
+    with col_heat:
+        st.markdown('<p class="stitle">Quando acontecem — PRF (dia × hora)</p>', unsafe_allow_html=True)
+        try:
+            DIAS_LABEL = {0: "Seg", 1: "Ter", 2: "Qua", 3: "Qui", 4: "Sex", 5: "Sáb", 6: "Dom"}
+            df_h = df_prf_filtrado.copy()
+            df_h["hora"] = pd.to_numeric(df_h["hora_acidente"].astype(str).str[:2], errors="coerce")
+            df_h["dia"]  = df_h["data_acidente"].dt.dayofweek.map(DIAS_LABEL)
+            heat = (df_h.dropna(subset=["hora", "dia"])
+                       .groupby(["dia", "hora"]).size().reset_index(name="Acidentes"))
+            if not heat.empty:
+                chart_heat = (
+                    alt.Chart(heat)
+                    .mark_rect(cornerRadius=2)
+                    .encode(
+                        x=alt.X("hora:O", title="Hora", axis=alt.Axis(labelAngle=0)),
+                        y=alt.Y("dia:O",
+                                sort=["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"],
+                                title=""),
+                        color=alt.Color("Acidentes:Q",
+                                        scale=alt.Scale(scheme="orangered"),
+                                        legend=alt.Legend(title="Acidentes")),
+                        tooltip=["dia:N", "hora:O", "Acidentes:Q"],
+                    ).properties(height=200)
+                )
+                st.altair_chart(chart_heat, use_container_width=True)
+        except Exception as e:
+            st.error(f"Erro heatmap: {e}")
+
+    with col_causa:
+        st.markdown('<p class="stitle">Principais causas — PRF</p>', unsafe_allow_html=True)
+        try:
+            causas = (df_prf_filtrado["causa_acidente"]
+                      .value_counts().head(8).reset_index())
+            causas.columns = ["Causa", "Acidentes"]
+            if not causas.empty:
+                chart_causa = (
+                    alt.Chart(causas)
+                    .mark_bar(color="#7c3aed",
+                              cornerRadiusTopRight=4,
+                              cornerRadiusBottomRight=4)
+                    .encode(
+                        x=alt.X("Acidentes:Q", title=""),
+                        y=alt.Y("Causa:N", sort="-x", title=""),
+                        tooltip=["Causa:N", "Acidentes:Q"],
+                    ).properties(height=240)
+                )
+                st.altair_chart(chart_causa, use_container_width=True)
+        except Exception as e:
+            st.error(f"Erro causas: {e}")
 
 # ── Tabela completa ───────────────────────────────────────────────────────────
 try:
