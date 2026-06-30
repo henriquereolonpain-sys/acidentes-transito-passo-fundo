@@ -85,26 +85,27 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
 .hero-bg-stripe {
     position: absolute;
     top: 0; bottom: 0; left: 0; right: 0;
-    border-radius: 14px;
 }
 .hero-bg-stripe.layer1 {
-    opacity: 0.18;
+    clip-path: polygon(0 0, 56% 0, 44% 100%, 0 100%);
+    opacity: 0.55;
     background: repeating-linear-gradient(
         -45deg,
         #dc2626,
         #dc2626 12px,
-        transparent 12px,
-        transparent 28px
+        #ffffff 12px,
+        #ffffff 24px
     );
 }
 .hero-bg-stripe.layer2 {
-    opacity: 0.13;
+    clip-path: polygon(56% 0, 100% 0, 100% 100%, 44% 100%);
+    opacity: 0.50;
     background: repeating-linear-gradient(
         45deg,
         #f5c400,
         #f5c400 12px,
-        transparent 12px,
-        transparent 28px
+        #1a1a1a 12px,
+        #1a1a1a 24px
     );
 }
 
