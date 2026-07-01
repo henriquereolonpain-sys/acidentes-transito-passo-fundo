@@ -8,10 +8,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import streamlit as st
-import altair as alt
+import streamlit.components.v1 as components
 import folium
 from folium.plugins import HeatMap, MarkerCluster
-from streamlit_folium import folium_static
 import pandas as pd
 from datetime import date
 
@@ -42,140 +41,277 @@ SEV_COLORS = {
 # ── CSS ───────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
 
-html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
+/* ── Tema geral ────────────────────────────────────────────────────────────── */
+.stApp { background: #E9E6DF; }
+html, body, [class*="css"] { font-family: 'IBM Plex Sans', sans-serif !important; }
 
-.block-container { padding-top: 1.5rem !important; }
+.block-container {
+    padding-top: 2.2rem !important;
+    padding-bottom: 1rem !important;
+    max-width: 100% !important;
+}
+/* esconde o cabeçalho translúcido do Streamlit que cobre o topbar */
+header[data-testid="stHeader"] { background: transparent; }
 
-.hero {
-    background: #c8c8c8;
-    border-radius: 14px;
-    padding: 36px 40px;
-    margin-bottom: 24px;
-    position: relative;
+/* ── Topbar ────────────────────────────────────────────────────────────────── */
+.topbar {
+    height: 58px;
+    background: #FBF9F4;
+    border: 1px solid #E3DECF;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: stretch;
     overflow: hidden;
-    border: 1px solid #bdbdbd;
-    text-align: left;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
-.hero-title {
-    font-size: 32px;
-    font-weight: 700;
-    color: #1a1a1a !important;
-    margin: 0 0 8px 0;
-    line-height: 1.15;
-    letter-spacing: -0.5px;
-    position: relative;
-    z-index: 2;
+.topbar-stripe {
+    width: 10px;
+    flex-shrink: 0;
+    background: repeating-linear-gradient(-45deg, #F2C200 0 12px, #15140F 12px 24px);
 }
-.hero-objective {
-    font-size: 15px;
-    color: #222;
-    margin: 0 0 10px 0;
-    position: relative;
-    z-index: 2;
+.topbar-inner {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 22px;
 }
-.hero-sub {
-    font-size: 12px;
-    color: #555550;
-    margin: 0;
-    position: relative;
-    z-index: 2;
+.tb-title {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: -0.01em;
+    color: #1A1813;
 }
-.hero-bg-stripe {
-    position: absolute;
-    top: 0; bottom: 0; left: 0; right: 0;
+.tb-sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    color: #8a847a;
+    margin-left: 12px;
 }
-.hero-bg-stripe.layer1 {
-    clip-path: polygon(0 0, 56% 0, 44% 100%, 0 100%);
-    opacity: 0.55;
-    background: repeating-linear-gradient(
-        -45deg,
-        #dc2626,
-        #dc2626 12px,
-        #ffffff 12px,
-        #ffffff 24px
-    );
-}
-.hero-bg-stripe.layer2 {
-    clip-path: polygon(56% 0, 100% 0, 100% 100%, 44% 100%);
-    opacity: 0.50;
-    background: repeating-linear-gradient(
-        45deg,
-        #f5c400,
-        #f5c400 12px,
-        #1a1a1a 12px,
-        #1a1a1a 24px
-    );
+.tb-src {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: #a39d92;
+    letter-spacing: 0.03em;
 }
 
-.kpi {
-    background: #ffffff;
-    border-radius: 10px;
-    padding: 14px 16px;
-    border-left: 4px solid #3b82f6;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04);
-}
-.kpi.total { border-left-color: #1d4ed8; }
-.kpi.fatal { border-left-color: #dc2626; }
-.kpi.grave { border-left-color: #ea580c; }
-.kpi.cross { border-left-color: #047857; }
-.kpi.prf   { border-left-color: #7c3aed; }
-.kpi-label {
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: #6b7280;
-    margin-bottom: 5px;
-}
-.kpi-value {
-    font-size: 28px;
-    font-weight: 700;
-    color: #0f172a;
-    line-height: 1.1;
-}
-
-.stitle {
-    font-size: 15px;
-    font-weight: 600;
-    color: #1e293b;
-    padding-bottom: 8px;
-    border-bottom: 2px solid #e2e8f0;
-    margin: 4px 0 14px 0;
-}
-
+/* ── Sidebar como "filter rail" ────────────────────────────────────────────── */
 section[data-testid="stSidebar"] > div:first-child {
-    background-color: #f8fafc !important;
+    background-color: #F5F2EA !important;
+    border-right: 1px solid #E3DECF;
 }
-section[data-testid="stSidebar"] h2 {
-    font-size: 13px !important;
-    font-weight: 700 !important;
+section[data-testid="stSidebar"] .block-container { padding-top: 1.2rem !important; }
+section[data-testid="stSidebar"] h1,
+section[data-testid="stSidebar"] h2,
+section[data-testid="stSidebar"] h3 {
+    font-family: 'IBM Plex Mono', monospace !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #475569 !important;
+    letter-spacing: 0.16em;
+    color: #9a948a !important;
+}
+/* rótulo dos widgets em mono/uppercase */
+section[data-testid="stSidebar"] label p {
+    font-size: 13px !important;
+    color: #3a352d !important;
+}
+section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {
+    font-family: 'IBM Plex Mono', monospace !important;
+    font-size: 11px !important;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #9a948a !important;
+}
+/* inputs creme */
+section[data-testid="stSidebar"] input,
+section[data-testid="stSidebar"] [data-baseweb="input"],
+section[data-testid="stSidebar"] [data-baseweb="select"] > div {
+    background: #ffffff !important;
+    border-color: #E0DACB !important;
+    color: #3a352d !important;
+}
+/* pills do multiselect em preto/dourado */
+section[data-testid="stSidebar"] [data-baseweb="tag"] {
+    background: #15140F !important;
+    color: #F2C200 !important;
+}
+section[data-testid="stSidebar"] [data-baseweb="tag"] span { color: #F2C200 !important; }
+/* toggle e radio em dourado */
+section[data-testid="stSidebar"] [data-testid="stCheckbox"] label,
+section[data-testid="stSidebar"] [data-testid="stMetricValue"] {
+    color: #1A1813 !important;
+}
+.stMetric { font-family: 'Archivo', sans-serif; }
+
+/* ── Faixa de KPIs (acima do mapa) ─────────────────────────────────────────── */
+.kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.kpi-card {
+    background: #FBF9F4;
+    border: 1px solid #E3DECF;
+    border-left: 3px solid #2F6FED;
+    border-radius: 6px;
+    padding: 10px 13px;
+}
+.kpi-card-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8a847a;
+}
+.kpi-card-value {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 800;
+    font-size: 26px;
+    color: #1A1813;
+    line-height: 1.1;
+    margin-top: 3px;
 }
 
+/* ── Faixa de insights (abaixo do mapa) ────────────────────────────────────── */
+.ins-strip {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+}
+.ins-card {
+    flex: 1;
+    background: #FBF9F4;
+    border: 1px solid #E3DECF;
+    border-radius: 8px;
+    padding: 10px 13px;
+}
+.ins-main  { font-size: 12.5px; color: #3a352d; line-height: 1.35; }
+.ins-main b { font-weight: 600; color: #1A1813; }
+.ins-sub   { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #9a948a; margin-top: 2px; }
+
+/* ── Moldura do mapa (iframe do folium) ────────────────────────────────────── */
+[data-testid="stIFrame"] {
+    border: 1px solid #E3DECF;
+    border-radius: 9px;
+    box-shadow: 0 18px 44px -30px rgba(0,0,0,.32);
+    background: #FBF9F4;
+    overflow: hidden;
+}
+
+/* ── Cards de gráficos ─────────────────────────────────────────────────────── */
+.charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+}
+.chart-card {
+    border: 1px solid #E3DECF;
+    border-radius: 9px;
+    background: #FBF9F4;
+    overflow: hidden;
+    box-shadow: 0 14px 36px -30px rgba(0,0,0,.28);
+}
+.chart-head {
+    padding: 13px 18px;
+    border-bottom: 1px solid #ECE7DA;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #6f6a60;
+}
+.chart-body { padding: 20px 22px 18px; }
+.chart-empty {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: #a39d92;
+    padding: 30px 0;
+    text-align: center;
+}
+
+/* ── Tabela de cruzamentos ─────────────────────────────────────────────────── */
+.xtable-card {
+    border: 1px solid #E3DECF;
+    border-radius: 9px;
+    overflow: hidden;
+    background: #FBF9F4;
+    box-shadow: 0 14px 36px -30px rgba(0,0,0,.28);
+}
+.xtable { width: 100%; border-collapse: collapse; }
+.xtable thead th {
+    background: #F0EBDF;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #9a948a;
+    font-weight: 500;
+    padding: 11px 18px;
+    text-align: right;
+    border-bottom: 1px solid #E3DECF;
+}
+.xtable thead th.xt-loc { text-align: left; }
+.xtable tbody td {
+    padding: 12px 18px;
+    font-size: 13px;
+    text-align: right;
+    border-bottom: 1px solid #EEE9DD;
+    color: #3a352d;
+}
+.xtable tbody tr:last-child td { border-bottom: none; }
+.xtable tbody tr:nth-child(even) td { background: #F8F4EB; }
+.xtable td.xt-loc {
+    text-align: left;
+    color: #8a5a2c;
+    font-weight: 500;
+    font-family: 'IBM Plex Sans', sans-serif;
+}
+.xtable td.xt-num  { font-family: 'IBM Plex Mono', monospace; }
+.xtable td.xt-zero { font-family: 'IBM Plex Mono', monospace; color: #c2bcae; }
+
+/* ── Rodapé de fontes ──────────────────────────────────────────────────────── */
 .footer {
     text-align: center;
-    color: #94a3b8;
-    font-size: 11.5px;
-    padding: 16px 0 8px;
-    border-top: 1px solid #e2e8f0;
+    color: #a39d92;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 18px 0 6px;
+    border-top: 1px solid #E3DECF;
     margin-top: 20px;
 }
+.footer b { color: #8a847a; font-weight: 500; }
 
-/* Insight cards */
-.ic {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 12px 14px;
-    height: 100%;
+/* ── Crédito do autor (amarelo queimado, esmaecido, bem pequeno) ────────────── */
+.author-credit {
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.03em;
+    color: #a8791f;
+    opacity: 0.62;
+    padding: 4px 0 22px;
+    line-height: 1.7;
 }
-.ic-emoji { font-size: 20px; margin-bottom: 5px; }
-.ic-text  { font-size: 12px; color: #374151; line-height: 1.5; }
-.ic-text b { color: #0f172a; }
+.author-credit .ac-name { font-weight: 500; }
+.author-credit a { color: #a8791f; text-decoration: none; }
+.author-credit a:hover { text-decoration: underline; }
+.author-credit .ac-sep { opacity: 0.5; margin: 0 7px; }
+
+.stitle {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: #9a948a;
+    margin: 6px 0 12px 0;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -310,7 +446,7 @@ def _popup_prf(row) -> str:
 
 
 def gerar_insights(df: pd.DataFrame, df_prf) -> list[tuple]:
-    """Retorna lista de (emoji, html) com insights automáticos dos dados filtrados."""
+    """Retorna lista de (main_html, sub_text) com insights automáticos dos dados filtrados."""
     insights = []
     DIAS = {0: "segunda", 1: "terça", 2: "quarta", 3: "quinta",
             4: "sexta", 5: "sábado", 6: "domingo"}
@@ -321,27 +457,30 @@ def gerar_insights(df: pd.DataFrame, df_prf) -> list[tuple]:
         if not datas_validas.empty:
             dia = datas_validas.dt.dayofweek.value_counts().idxmax()
             n_dia = datas_validas.dt.dayofweek.value_counts().iloc[0]
-            insights.append(("", f"<b>{DIAS[dia].capitalize()}</b> é o dia com mais registros de acidentes ({n_dia})"))
+            insights.append((f"<b>{DIAS[dia].capitalize()}</b> é o dia com mais registros",
+                             f"{n_dia} acidentes"))
 
     # Hora de pico (PRF)
     if df_prf is not None and not df_prf.empty and "hora_acidente" in df_prf.columns:
         horas = pd.to_numeric(df_prf["hora_acidente"].astype(str).str[:2], errors="coerce").dropna()
         if not horas.empty:
             h = int(horas.value_counts().idxmax())
-            insights.append(("", f"Pico nas rodovias federais: <b>{h:02d}h–{h+1:02d}h</b>"))
+            insights.append((f"Pico nas federais <b>{h:02d}h–{h+1:02d}h</b>", "por horário"))
 
     # Taxa de fatalidade
     if len(df) > 0:
         n_fatal = len(df[df["severidade"] == "fatal"])
         taxa = n_fatal / len(df) * 100
-        insights.append(("", f"<b>{taxa:.0f}%</b> dos acidentes registrados resultaram em morte"))
+        insights.append((f'<b style="color:#C0392B">{taxa:.0f}%</b> resultaram em morte',
+                         "dos registrados"))
 
     # BR mais perigosa
     if df_prf is not None and not df_prf.empty and "br" in df_prf.columns:
         br_mais = str(df_prf["br"].value_counts().idxmax())
         n_br = df_prf["br"].value_counts().iloc[0]
         fatais_br = len(df_prf[(df_prf["br"].astype(str) == br_mais) & (df_prf["severidade"] == "fatal")])
-        insights.append(("", f"<b>BR-{br_mais}</b>: rodovia com mais acidentes ({n_br} registros, {fatais_br} fatais)"))
+        insights.append((f"<b>BR-{br_mais}</b> · mais acidentes",
+                         f"{n_br} reg · {fatais_br} fatais"))
 
     # Cruzamento mais perigoso
     if "loc_tipo" in df.columns:
@@ -349,15 +488,72 @@ def gerar_insights(df: pd.DataFrame, df_prf) -> list[tuple]:
         if not df_c.empty:
             top = df_c["loc_endereco"].value_counts()
             nome = top.index[0]
-            nome_curto = nome[:45] + "…" if len(nome) > 45 else nome
-            insights.append(("", f"Cruzamento crítico: <b>{nome_curto}</b> ({top.iloc[0]} acidentes)"))
+            nome_curto = nome[:32] + "…" if len(nome) > 32 else nome
+            insights.append((f"Cruzamento crítico: <b>{nome_curto}</b>",
+                             f"{top.iloc[0]} acidentes"))
 
     return insights
 
 
-def render_mapa(df: pd.DataFrame, modo: str, df_prf: pd.DataFrame = None) -> folium.Map:
+FONT_IMPORT = (
+    "<style>@import url('https://fonts.googleapis.com/css2?"
+    "family=Archivo:wght@700;800&family=IBM+Plex+Mono:wght@400;500&"
+    "family=IBM+Plex+Sans:wght@400;500;600&display=swap');"
+    # desce os controles do topo para não ficarem sob a barra de título do card
+    ".leaflet-top{top:54px;}"
+    ".leaflet-top.leaflet-left{left:0;right:auto;}"
+    ".leaflet-control-zoom{border:1px solid #D9D3C5 !important;border-radius:6px !important;"
+    "overflow:hidden;box-shadow:0 4px 12px -6px rgba(0,0,0,.25) !important;}"
+    ".leaflet-control-zoom a{color:#3a352d !important;background:#fff !important;}"
+    # cantos arredondados no próprio container do mapa (moldura do card)
+    ".leaflet-container{border-radius:9px;}"
+    "</style>"
+)
+
+
+def _map_header_html(n_registros: int) -> str:
+    """Barra de título do card do mapa (faixa + rótulo + contador)."""
+    return (
+        '<div style="position:absolute;top:0;left:0;right:0;height:46px;z-index:1200;'
+        'display:flex;align-items:stretch;background:#FBF9F4;border-bottom:1px solid #ECE7DA;'
+        "font-family:'IBM Plex Sans',sans-serif;overflow:hidden;border-radius:9px 9px 0 0\">"
+        '<div style="width:8px;flex-shrink:0;background:repeating-linear-gradient('
+        '-45deg,#F2C200 0 11px,#15140F 11px 22px)"></div>'
+        '<div style="flex:1;display:flex;align-items:center;justify-content:space-between;padding:0 18px">'
+        "<span style=\"font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;"
+        'text-transform:uppercase;color:#6f6a60">Mapa de calor · densidade de acidentes</span>'
+        "<span style=\"font-family:'IBM Plex Mono',monospace;font-size:11px;color:#a39d92\">"
+        f'{n_registros:,} registros no filtro</span>'
+        '</div></div>'
+    )
+
+
+def _map_legend_html() -> str:
+    """Legenda de densidade (gradiente) no canto inferior-esquerdo do mapa."""
+    return (
+        '<div style="position:absolute;bottom:14px;left:14px;z-index:1200;'
+        'background:rgba(251,249,244,.94);border:1px solid #E3DECF;border-radius:7px;'
+        'padding:10px 12px;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)">'
+        "<div style=\"font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;"
+        'text-transform:uppercase;color:#8a847a;margin-bottom:7px">Densidade ponderada</div>'
+        '<div style="width:120px;height:9px;border-radius:5px;'
+        'background:linear-gradient(90deg,#5b6cd0,#F2C200,#E5484D)"></div>'
+        "<div style=\"display:flex;justify-content:space-between;font-size:10px;color:#9a948a;"
+        "margin-top:4px;font-family:'IBM Plex Mono',monospace\">"
+        '<span>baixa</span><span>alta</span></div></div>'
+    )
+
+
+def render_mapa(df: pd.DataFrame, modo: str, df_prf: pd.DataFrame = None,
+                n_registros: int = 0) -> folium.Map:
     center = [df["latitude"].mean(), df["longitude"].mean()] if not df.empty else PASSO_FUNDO_CENTER
-    m = folium.Map(location=center, zoom_start=12, tiles="CartoDB positron")
+    m = folium.Map(location=center, zoom_start=12, tiles=None, zoom_control=True)
+    # tiles CARTO Voyager — tom quente, combina com a paleta creme do dashboard
+    folium.TileLayer(
+        tiles="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+        attr='&copy; OpenStreetMap &copy; CARTO',
+        name="Voyager", control=False,
+    ).add_to(m)
 
     if df.empty:
         return m
@@ -404,17 +600,184 @@ def render_mapa(df: pd.DataFrame, modo: str, df_prf: pd.DataFrame = None) -> fol
                 ).add_to(prf_group)
             prf_group.add_to(m)
 
+    # ── Chrome do card: fontes/estilo + barra de título + legenda ──────────────
+    m.get_root().header.add_child(folium.Element(FONT_IMPORT))
+    m.get_root().html.add_child(folium.Element(_map_header_html(n_registros)))
+    m.get_root().html.add_child(folium.Element(_map_legend_html()))
+
     return m
 
 
-# ── Hero header ───────────────────────────────────────────────────────────────
+# ── Gráficos (cards HTML no estilo do design) ─────────────────────────────────
+MONO = "font-family:'IBM Plex Mono',monospace"
+
+
+def _chart_card(title: str, body: str) -> str:
+    return (f'<div class="chart-card"><div class="chart-head">{title}</div>'
+            f'<div class="chart-body">{body}</div></div>')
+
+
+def _lerp_color(t: float, c0, c1) -> str:
+    r = round(c0[0] + (c1[0] - c0[0]) * t)
+    g = round(c0[1] + (c1[1] - c0[1]) * t)
+    b = round(c0[2] + (c1[2] - c0[2]) * t)
+    return f"rgb({r},{g},{b})"
+
+
+def _chart_severidade(df: pd.DataFrame) -> str:
+    itens = [("Fatal", "fatal", "#D93A3F"), ("Grave", "grave", "#E08A00"),
+             ("Colisão", "colisao", "#8C877C")]
+    counts = {sev: int((df["severidade"] == sev).sum()) for _, sev, _ in itens}
+    mx = max(counts.values()) or 1
+    barras = ""
+    for nome, sev, cor in itens:
+        c = counts[sev]
+        h = c / mx * 100
+        barras += (
+            '<div style="flex:1;display:flex;flex-direction:column;align-items:center;'
+            'justify-content:flex-end;height:100%">'
+            f'<div style="{MONO};font-size:12px;color:#3a352d;margin-bottom:6px">{c}</div>'
+            f'<div style="width:100%;max-width:70px;height:{h:.0f}%;background:{cor};'
+            'border-radius:4px 4px 0 0;min-height:3px"></div></div>'
+        )
+    rotulos = "".join(
+        f'<div style="flex:1;text-align:center;{MONO};font-size:11px;color:#6b665c">{nome}</div>'
+        for nome, _, _ in itens
+    )
+    return (
+        f'<div style="height:200px;display:flex;align-items:flex-end;gap:26px">{barras}</div>'
+        f'<div style="display:flex;gap:26px;margin-top:8px">{rotulos}</div>'
+    )
+
+
+def _chart_meses(df: pd.DataFrame) -> str:
+    s = df[df["data_publicacao"].notna()].copy()
+    if s.empty:
+        return '<div class="chart-empty">Sem dados no período</div>'
+    s["mes"] = s["data_publicacao"].dt.to_period("M")
+    cont = s.groupby("mes").size().sort_index()
+    vals = list(cont.values)
+    anos = [p.year for p in cont.index]
+    mx = max(vals) or 1
+    n = len(vals)
+    barras = ""
+    for i, v in enumerate(vals):
+        cor = "#C0392B" if i >= n - 12 else "#B79B6E"
+        barras += (f'<div style="flex:1;height:{v / mx * 100:.1f}%;background:{cor};'
+                   'border-radius:2px 2px 0 0;min-width:2px;min-height:2px"></div>')
+    # eixo x: primeiro, ~1/3, ~2/3 e último ano
+    marcas = sorted({anos[0], anos[n // 3], anos[2 * n // 3], anos[-1]})
+    eixo = "".join(f"<span>{a}</span>" for a in marcas)
+    return (
+        '<div style="height:200px;display:flex;align-items:flex-end;gap:2px;'
+        f'padding-bottom:22px;border-bottom:1px solid #E6E1D4">{barras}</div>'
+        f'<div style="display:flex;justify-content:space-between;{MONO};'
+        f'font-size:9.5px;color:#b3ada1;margin-top:8px">{eixo}</div>'
+    )
+
+
+def _chart_heat_diahora(df_prf) -> str:
+    if df_prf is None or df_prf.empty:
+        return '<div class="chart-empty">Sem dados PRF no período</div>'
+    h = df_prf.copy()
+    h["hora"] = pd.to_numeric(h["hora_acidente"].astype(str).str[:2], errors="coerce")
+    h["dia"] = h["data_acidente"].dt.dayofweek
+    grid = h.dropna(subset=["hora", "dia"]).groupby(["dia", "hora"]).size()
+    if grid.empty:
+        return '<div class="chart-empty">Sem dados PRF no período</div>'
+    mx = int(grid.max()) or 1
+    c0, c1 = (247, 233, 220), (176, 35, 30)
+    dias = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
+    linhas = ""
+    for di, dl in enumerate(dias):
+        celulas = ""
+        for hr in range(24):
+            c = int(grid.get((di, hr), 0))
+            cor = _lerp_color(c / mx, c0, c1)
+            celulas += (f'<div style="flex:1;aspect-ratio:1;border-radius:2px;'
+                        f'background:{cor}"></div>')
+        linhas += (
+            '<div style="display:flex;align-items:center;gap:5px">'
+            f'<span style="width:24px;{MONO};font-size:9.5px;color:#9a948a;flex-shrink:0">{dl}</span>'
+            f'<div style="flex:1;display:flex;gap:3px">{celulas}</div></div>'
+        )
+    horas = "".join(
+        f'<span style="flex:1;text-align:center">{h if h % 3 == 0 else ""}</span>'
+        for h in range(24)
+    )
+    eixo = (
+        '<div style="display:flex;align-items:center;gap:5px;margin-top:2px">'
+        '<span style="width:24px;flex-shrink:0"></span>'
+        f'<div style="flex:1;display:flex;gap:3px;{MONO};font-size:8px;color:#b3ada1">{horas}</div></div>'
+    )
+    legenda = (
+        f'<div style="display:flex;align-items:center;gap:8px;margin-top:14px;{MONO};'
+        'font-size:10px;color:#8a847a"><span>1</span>'
+        '<div style="width:90px;height:8px;border-radius:4px;'
+        'background:linear-gradient(90deg,#F7E9DC,#E08A00,#B0231E)"></div>'
+        f'<span>{mx} acidentes</span></div>'
+    )
+    return (f'<div style="display:flex;flex-direction:column;gap:3px">{linhas}{eixo}</div>'
+            f'{legenda}')
+
+
+def _tabela_cruzamentos(cruzamentos: pd.DataFrame) -> str:
+    """Tabela de cruzamentos no estilo do design (card creme, local em marrom)."""
+    linhas = ""
+    for local, row in cruzamentos.iterrows():
+        nome = str(local).split(",")[0].strip()  # só o par de vias
+        def _cel(v):
+            v = int(v)
+            cls = "xt-zero" if v == 0 else "xt-num"
+            return f'<td class="{cls}">{v}</td>'
+        linhas += (
+            f'<tr><td class="xt-loc">{nome}</td>'
+            f'{_cel(row["Total"])}{_cel(row["Fatais"])}{_cel(row["Graves"])}</tr>'
+        )
+    return (
+        '<div class="xtable-card"><table class="xtable">'
+        '<thead><tr><th class="xt-loc">Local</th>'
+        '<th>Total</th><th>Fatais</th><th>Graves</th></tr></thead>'
+        f'<tbody>{linhas}</tbody></table></div>'
+    )
+
+
+def _chart_causas(df_prf) -> str:
+    if df_prf is None or df_prf.empty or "causa_acidente" not in df_prf.columns:
+        return '<div class="chart-empty">Sem dados PRF no período</div>'
+    top = df_prf["causa_acidente"].value_counts().head(6)
+    if top.empty:
+        return '<div class="chart-empty">Sem dados PRF no período</div>'
+    mx = int(top.iloc[0]) or 1
+    cores = ["#B0231E", "#D14C1F", "#E08A00", "#E08A00", "#C79400", "#C79400"]
+    linhas = ""
+    for i, (causa, val) in enumerate(top.items()):
+        nome = str(causa)
+        nome = nome[:26] + "…" if len(nome) > 26 else nome
+        pct = int(val) / mx * 100
+        cor = cores[i] if i < len(cores) else "#C79400"
+        linhas += (
+            '<div style="display:flex;align-items:center;gap:12px">'
+            f'<span style="width:150px;flex-shrink:0;font-size:12px;color:#3a352d;'
+            f'text-align:right">{nome}</span>'
+            '<div style="flex:1;height:16px;background:#F0EBDF;border-radius:3px;overflow:hidden">'
+            f'<div style="width:{pct:.0f}%;height:100%;background:{cor}"></div></div>'
+            f'<span style="width:28px;{MONO};font-size:11px;color:#3a352d">{int(val)}</span></div>'
+        )
+    return f'<div style="display:flex;flex-direction:column;gap:12px">{linhas}</div>'
+
+
+# ── Topbar ────────────────────────────────────────────────────────────────────
 st.markdown("""
-<div class="hero">
-  <div class="hero-bg-stripe layer1"></div>
-  <div class="hero-bg-stripe layer2"></div>
-  <p class="hero-title">Mapa de Acidentes — Passo Fundo e região, RS</p>
-  <p class="hero-objective">Monitoramento contínuo de acidentes de trânsito para embasar políticas públicas de segurança viária</p>
-  <p class="hero-sub">Henrique Pain &nbsp;|&nbsp; rdplanalto.com · GZH · Uirapuru · PRF (dados abertos)</p>
+<div class="topbar">
+  <div class="topbar-stripe"></div>
+  <div class="topbar-inner">
+    <div>
+      <span class="tb-title">Mapa de Acidentes</span>
+      <span class="tb-sub">Passo Fundo e região, RS</span>
+    </div>
+    <div class="tb-src">rdplanalto.com · PRF (dados abertos)</div>
+  </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -489,7 +852,7 @@ if mostrar_prf:
     df_prf_completo = carregar_prf()
     df_prf_filtrado = filtrar_prf(df_prf_completo, data_inicio, data_fim, municipios_sel)
 
-# ── KPIs ──────────────────────────────────────────────────────────────────────
+# ── KPIs e insights ──────────────────────────────────────────────────────────
 label_count   = "Acidentes únicos" if deduplicado else "Artigos no período"
 n_prf         = len(df_prf_filtrado) if df_prf_filtrado is not None else 0
 n_fatais      = len(df[df["severidade"] == "fatal"])
@@ -499,41 +862,43 @@ n_cruzamentos = (
     if "loc_tipo" in df.columns else 0
 )
 
-c1, c2, c3, c4, c5 = st.columns(5)
-for col, cls, lbl, val in [
-    (c1, "total", label_count,          len(df)),
-    (c2, "fatal", "Fatais (notícias)",  n_fatais),
-    (c3, "grave", "Graves (notícias)",  n_graves),
-    (c4, "cross", "Cruzamentos mapeados", n_cruzamentos),
-    (c5, "prf",   "PRF — BR federais",  n_prf),
-]:
-    col.markdown(
-        f'<div class="kpi {cls}"><div class="kpi-label">{lbl}</div>'
-        f'<div class="kpi-value">{val}</div></div>',
-        unsafe_allow_html=True,
+# faixa de KPIs (cards com borda esquerda colorida) acima do mapa
+kpi_cards = [
+    (label_count,      len(df),        "#2F6FED"),
+    ("Fatais",         n_fatais,       "#E5484D"),
+    ("Graves",         n_graves,       "#E08A00"),
+    ("Cruzamentos",    n_cruzamentos,  "#1F8A5B"),
+    ("PRF — federais", n_prf,          "#7A4FD0"),
+]
+kpi_html = '<div class="kpi-strip">'
+for lbl, val, cor in kpi_cards:
+    kpi_html += (
+        f'<div class="kpi-card" style="border-left-color:{cor}">'
+        f'<div class="kpi-card-label">{lbl}</div>'
+        f'<div class="kpi-card-value">{val:,}</div></div>'
     )
+kpi_html += "</div>"
+st.markdown(kpi_html, unsafe_allow_html=True)
 
-st.markdown("<br>", unsafe_allow_html=True)
-
-# ── Insights automáticos ──────────────────────────────────────────────────────
-insights = gerar_insights(df, df_prf_filtrado)
-if insights:
-    cols_i = st.columns(len(insights))
-    for col, (emoji, texto) in zip(cols_i, insights):
-        col.markdown(
-            f'<div class="ic"><div class="ic-text">{texto}</div></div>',
-            unsafe_allow_html=True,
-        )
-    st.markdown("<br>", unsafe_allow_html=True)
-
-# ── Mapa ──────────────────────────────────────────────────────────────────────
-st.markdown('<p class="stitle">Mapa</p>', unsafe_allow_html=True)
-
+# ── Mapa (card emoldurado) ───────────────────────────────────────────────────
 if df.empty and (df_prf_filtrado is None or df_prf_filtrado.empty):
     st.info("Nenhum dado para os filtros selecionados.")
 else:
-    mapa = render_mapa(df, modo_mapa, df_prf=df_prf_filtrado)
-    folium_static(mapa, width=1100, height=520)
+    mapa = render_mapa(df, modo_mapa, df_prf=df_prf_filtrado, n_registros=len(df))
+    # render próprio (get_root) preserva o chrome injetado; folium_static o descartaria
+    components.html(mapa.get_root().render(), height=520)
+
+# ── Insights automáticos ─────────────────────────────────────────────────────
+insights = gerar_insights(df, df_prf_filtrado)
+if insights:
+    ins_html = '<div class="ins-strip">'
+    for main, sub in insights:
+        ins_html += (
+            f'<div class="ins-card"><div class="ins-main">{main}</div>'
+            f'<div class="ins-sub">{sub}</div></div>'
+        )
+    ins_html += "</div>"
+    st.markdown(ins_html, unsafe_allow_html=True)
 
 st.markdown("---")
 
@@ -546,9 +911,9 @@ try:
         cruz_fatal = df_cruz[df_cruz["severidade"] == "fatal"].groupby("loc_endereco").size().rename("Fatais")
         cruz_grave = df_cruz[df_cruz["severidade"] == "grave"].groupby("loc_endereco").size().rename("Graves")
         cruzamentos = pd.concat([cruz_total, cruz_fatal, cruz_grave], axis=1).fillna(0).astype(int)
-        cruzamentos = cruzamentos.sort_values(["Fatais", "Total"], ascending=False).head(15)
+        cruzamentos = cruzamentos.sort_values(["Fatais", "Total"], ascending=False).head(12)
         cruzamentos.index.name = "Local"
-        st.dataframe(cruzamentos.reset_index(), use_container_width=True, hide_index=True)
+        st.markdown(_tabela_cruzamentos(cruzamentos), unsafe_allow_html=True)
     else:
         st.info("Nenhum cruzamento com coordenada nos filtros atuais.")
 except Exception as e:
@@ -556,108 +921,21 @@ except Exception as e:
 
 st.markdown("---")
 
-# ── Gráficos ──────────────────────────────────────────────────────────────────
-col_sev, col_mes = st.columns(2)
-
-with col_sev:
-    st.markdown('<p class="stitle">Por severidade</p>', unsafe_allow_html=True)
-    try:
-        label_map = {k: v["label"] for k, v in SEVERIDADE_CONFIG.items()}
-        contagem = df["severidade"].value_counts().rename(index=label_map).reset_index()
-        contagem.columns = ["Severidade", "Acidentes"]
-        if not contagem.empty:
-            chart_sev = (
-                alt.Chart(contagem)
-                .mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4)
-                .encode(
-                    x=alt.X("Severidade:N", sort="-y", axis=alt.Axis(labelAngle=0)),
-                    y=alt.Y("Acidentes:Q", title=""),
-                    color=alt.Color("Severidade:N",
-                        scale=alt.Scale(domain=list(SEV_COLORS.keys()),
-                                        range=list(SEV_COLORS.values())),
-                        legend=None),
-                    tooltip=["Severidade:N", "Acidentes:Q"],
-                ).properties(height=260)
-            )
-            st.altair_chart(chart_sev, use_container_width=True)
-    except Exception as e:
-        st.error(f"Erro: {e}")
-
-with col_mes:
-    st.markdown('<p class="stitle">Por mês</p>', unsafe_allow_html=True)
-    try:
-        df_tempo = df[df["data_publicacao"].notna()].copy()
-        df_tempo["mes"] = df_tempo["data_publicacao"].dt.to_period("M").astype(str)
-        por_mes = df_tempo.groupby("mes").size().reset_index()
-        por_mes.columns = ["Mês", "Acidentes"]
-        if not por_mes.empty:
-            chart_mes = (
-                alt.Chart(por_mes)
-                .mark_bar(color="#2563eb", cornerRadiusTopLeft=3, cornerRadiusTopRight=3)
-                .encode(
-                    x=alt.X("Mês:O", axis=alt.Axis(labelAngle=-45, labelLimit=60)),
-                    y=alt.Y("Acidentes:Q", title=""),
-                    tooltip=["Mês:N", "Acidentes:Q"],
-                ).properties(height=260)
-            )
-            st.altair_chart(chart_mes, use_container_width=True)
-    except Exception as e:
-        st.error(f"Erro: {e}")
-
-# ── PRF: heatmap dia × hora  +  top causas ───────────────────────────────────
-if df_prf_filtrado is not None and not df_prf_filtrado.empty:
-    st.markdown("---")
-    col_heat, col_causa = st.columns([6, 4])
-
-    with col_heat:
-        st.markdown('<p class="stitle">Quando acontecem — PRF (dia × hora)</p>', unsafe_allow_html=True)
-        try:
-            DIAS_LABEL = {0: "Seg", 1: "Ter", 2: "Qua", 3: "Qui", 4: "Sex", 5: "Sáb", 6: "Dom"}
-            df_h = df_prf_filtrado.copy()
-            df_h["hora"] = pd.to_numeric(df_h["hora_acidente"].astype(str).str[:2], errors="coerce")
-            df_h["dia"]  = df_h["data_acidente"].dt.dayofweek.map(DIAS_LABEL)
-            heat = (df_h.dropna(subset=["hora", "dia"])
-                       .groupby(["dia", "hora"]).size().reset_index(name="Acidentes"))
-            if not heat.empty:
-                chart_heat = (
-                    alt.Chart(heat)
-                    .mark_rect(cornerRadius=2)
-                    .encode(
-                        x=alt.X("hora:O", title="Hora", axis=alt.Axis(labelAngle=0)),
-                        y=alt.Y("dia:O",
-                                sort=["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"],
-                                title=""),
-                        color=alt.Color("Acidentes:Q",
-                                        scale=alt.Scale(scheme="orangered"),
-                                        legend=alt.Legend(title="Acidentes")),
-                        tooltip=["dia:N", "hora:O", "Acidentes:Q"],
-                    ).properties(height=200)
-                )
-                st.altair_chart(chart_heat, use_container_width=True)
-        except Exception as e:
-            st.error(f"Erro heatmap: {e}")
-
-    with col_causa:
-        st.markdown('<p class="stitle">Principais causas — PRF</p>', unsafe_allow_html=True)
-        try:
-            causas = (df_prf_filtrado["causa_acidente"]
-                      .value_counts().head(8).reset_index())
-            causas.columns = ["Causa", "Acidentes"]
-            if not causas.empty:
-                chart_causa = (
-                    alt.Chart(causas)
-                    .mark_bar(color="#7c3aed",
-                              cornerRadiusTopRight=4,
-                              cornerRadiusBottomRight=4)
-                    .encode(
-                        x=alt.X("Acidentes:Q", title=""),
-                        y=alt.Y("Causa:N", sort="-x", title=""),
-                        tooltip=["Causa:N", "Acidentes:Q"],
-                    ).properties(height=240)
-                )
-                st.altair_chart(chart_causa, use_container_width=True)
-        except Exception as e:
-            st.error(f"Erro causas: {e}")
+# ── Gráficos (cards no estilo do design) ──────────────────────────────────────
+try:
+    cards = [
+        _chart_card("Por severidade", _chart_severidade(df)),
+        _chart_card("Por mês", _chart_meses(df)),
+    ]
+    if df_prf_filtrado is not None and not df_prf_filtrado.empty:
+        cards.append(_chart_card("Quando acontecem · PRF (dia × hora)",
+                                 _chart_heat_diahora(df_prf_filtrado)))
+        cards.append(_chart_card("Principais causas · PRF",
+                                 _chart_causas(df_prf_filtrado)))
+    st.markdown(f'<div class="charts-grid">{"".join(cards)}</div>',
+                unsafe_allow_html=True)
+except Exception as e:
+    st.error(f"Erro nos gráficos: {e}")
 
 # ── Tabela completa ───────────────────────────────────────────────────────────
 try:
@@ -678,5 +956,14 @@ st.markdown("""
 <div class="footer">
   Dados: <b>rdplanalto.com</b> · <b>GZH</b> · <b>Uirapuru</b> · <b>PRF / dados abertos gov.br</b>
   &nbsp;|&nbsp; Geocodificação: Nominatim (OpenStreetMap) &nbsp;|&nbsp; Projeto_08
+</div>
+<div class="author-credit">
+  <span class="ac-name">Henrique Pain</span>
+  <span class="ac-sep">·</span>
+  <a href="https://henriquereolonpain-sys.github.io/#home" target="_blank">portfólio</a>
+  <span class="ac-sep">·</span>
+  <a href="https://linkedin.com/in/henrique-pain" target="_blank">linkedin.com/in/henrique-pain</a>
+  <span class="ac-sep">·</span>
+  54 9 8129-3329
 </div>
 """, unsafe_allow_html=True)

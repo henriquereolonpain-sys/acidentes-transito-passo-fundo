@@ -34,3 +34,6 @@ Thumbs.db
 
 # Config local do Claude Code
 .claude/
+
+# Mockups de design exportados do Claude Design (referência local, não versionar)
+*standalone*.html
