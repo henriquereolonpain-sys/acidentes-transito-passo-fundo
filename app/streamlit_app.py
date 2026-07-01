@@ -25,17 +25,20 @@ st.set_page_config(
 PASSO_FUNDO_CENTER = [-28.2576, -52.4086]
 
 SEVERIDADE_CONFIG = {
-    "fatal":   {"color": "darkred", "icon": "skull-crossbones", "label": "Fatal"},
+    "fatal":   {"color": "red",    "icon": "skull-crossbones", "label": "Fatal"},
     "grave":   {"color": "orange",  "icon": "exclamation",      "label": "Grave"},
-    "colisao": {"color": "blue",    "icon": "car-crash",        "label": "Colisão"},
+    "colisao": {"color": "gray",    "icon": "car-crash",        "label": "Colisão"},
 }
 
 SEVERIDADE_PESO = {"fatal": 3.0, "grave": 2.0, "colisao": 1.0}
 
+# paleta do design (por slug de severidade) — usada nos marcadores do mapa
+PALETA_SEV = {"fatal": "#D93A3F", "grave": "#E08A00", "colisao": "#8C877C"}
+
 SEV_COLORS = {
-    "Fatal":   "#dc2626",
-    "Grave":   "#ea580c",
-    "Colisão": "#3b82f6",
+    "Fatal":   "#D93A3F",
+    "Grave":   "#E08A00",
+    "Colisão": "#8C877C",
 }
 
 # ── CSS ───────────────────────────────────────────────────────────────────────
@@ -135,12 +138,19 @@ section[data-testid="stSidebar"] [data-baseweb="select"] > div {
     border-color: #E0DACB !important;
     color: #3a352d !important;
 }
-/* pills do multiselect em preto/dourado */
+/* pills do multiselect em preto/dourado — não encolher/cortar o texto */
 section[data-testid="stSidebar"] [data-baseweb="tag"] {
     background: #15140F !important;
     color: #F2C200 !important;
+    max-width: none !important;
+    flex-shrink: 0 !important;
 }
-section[data-testid="stSidebar"] [data-baseweb="tag"] span { color: #F2C200 !important; }
+section[data-testid="stSidebar"] [data-baseweb="tag"] span {
+    color: #F2C200 !important;
+    max-width: none !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+}
 /* toggle e radio em dourado */
 section[data-testid="stSidebar"] [data-testid="stCheckbox"] label,
 section[data-testid="stSidebar"] [data-testid="stMetricValue"] {
@@ -585,16 +595,18 @@ def render_mapa(df: pd.DataFrame, modo: str, df_prf: pd.DataFrame = None,
                 icon=folium.Icon(color=cfg["color"], icon="circle", prefix="fa"),
             ).add_to(clusters[sev])
 
-        # no modo marcadores, PRF aparece como círculos sobrepostos
+        # PRF nas rodovias: círculos discretos na paleta do site, com anel creme
         if df_prf is not None and not df_prf.empty:
             prf_group = folium.FeatureGroup(name="PRF — Rodovias Federais", show=True)
+            raios = {"fatal": 5.5, "grave": 4.5, "colisao": 3.5}
             for _, row in df_prf.iterrows():
                 sev = row.get("severidade", "colisao")
-                cor = {"fatal": "black", "grave": "darkred", "colisao": "cadetblue"}.get(sev, "cadetblue")
+                cor = PALETA_SEV.get(sev, "#8C877C")
                 folium.CircleMarker(
                     location=[row["latitude"], row["longitude"]],
-                    radius=6 if sev == "fatal" else 4,
-                    color=cor, fill=True, fill_opacity=0.8,
+                    radius=raios.get(sev, 3.5),
+                    color="#FBF9F4", weight=1.2, opacity=0.9,
+                    fill=True, fill_color=cor, fill_opacity=0.9,
                     popup=folium.Popup(_popup_prf(row), max_width=280),
                     tooltip=f"PRF BR-{row.get('br','?')} | {sev}",
                 ).add_to(prf_group)
@@ -776,7 +788,7 @@ st.markdown("""
       <span class="tb-title">Mapa de Acidentes</span>
       <span class="tb-sub">Passo Fundo e região, RS</span>
     </div>
-    <div class="tb-src">rdplanalto.com · PRF (dados abertos)</div>
+    <div class="tb-src">RD Planalto · Uirapuru · GZH · PRF (dados abertos)</div>
   </div>
 </div>
 """, unsafe_allow_html=True)
