@@ -245,6 +245,42 @@ section[data-testid="stSidebar"] [data-testid="stMetricValue"] {
     text-align: center;
 }
 
+/* ── Feed de acidentes recentes ────────────────────────────────────────────── */
+.feed-list { display: flex; flex-direction: column; }
+.feed-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 4px;
+    border-bottom: 1px solid #EEE9DD;
+}
+.feed-item:last-child { border-bottom: none; }
+.feed-date {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: #9a948a;
+    flex-shrink: 0;
+    width: 52px;
+    padding-top: 2px;
+}
+.feed-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 6px;
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.03);
+}
+.feed-body { flex: 1; min-width: 0; }
+.feed-title { font-size: 13px; color: #1A1813; line-height: 1.35; }
+.feed-meta  {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: #9a948a;
+    margin-top: 2px;
+}
+.feed-src { color: #8a5a2c !important; text-decoration: none; }
+.feed-src:hover { text-decoration: underline; }
+
 /* ── Tabela de cruzamentos ─────────────────────────────────────────────────── */
 .xtable-card {
     border: 1px solid #E3DECF;
@@ -554,6 +590,22 @@ def _map_legend_html() -> str:
     )
 
 
+def _cluster_icon_js(cor: str) -> str:
+    """JS que desenha a bolha de agrupamento na paleta do site (cor por severidade)."""
+    return (
+        "function(cluster){"
+        "var c=cluster.getChildCount();"
+        "var s=c<10?32:(c<100?40:48);"
+        "return new L.DivIcon({"
+        "html:'<div style=\"background:" + cor + ";color:#FBF9F4;width:'+s+'px;"
+        "height:'+s+'px;line-height:'+s+'px;border-radius:50%;text-align:center;"
+        "font-family:Archivo,sans-serif;font-weight:800;font-size:13px;"
+        "border:2px solid #FBF9F4;box-shadow:0 2px 7px rgba(0,0,0,.3)\">'+c+'</div>',"
+        "className:'',iconSize:new L.Point(s,s)});"
+        "}"
+    )
+
+
 def render_mapa(df: pd.DataFrame, modo: str, df_prf: pd.DataFrame = None,
                 n_registros: int = 0) -> folium.Map:
     center = [df["latitude"].mean(), df["longitude"].mean()] if not df.empty else PASSO_FUNDO_CENTER
@@ -581,8 +633,11 @@ def render_mapa(df: pd.DataFrame, modo: str, df_prf: pd.DataFrame = None,
 
     elif modo == "Marcadores por severidade":
         clusters = {
-            sev: MarkerCluster(name=cfg["label"],
-                               options={"showCoverageOnHover": False, "spiderfyOnMaxZoom": True}).add_to(m)
+            sev: MarkerCluster(
+                name=cfg["label"],
+                icon_create_function=_cluster_icon_js(PALETA_SEV.get(sev, "#8C877C")),
+                options={"showCoverageOnHover": False, "spiderfyOnMaxZoom": True},
+            ).add_to(m)
             for sev, cfg in SEVERIDADE_CONFIG.items()
         }
         for _, row in df.iterrows():
@@ -731,6 +786,39 @@ def _chart_heat_diahora(df_prf) -> str:
     )
     return (f'<div style="display:flex;flex-direction:column;gap:3px">{linhas}{eixo}</div>'
             f'{legenda}')
+
+
+def _feed_recentes(df: pd.DataFrame, n: int = 8) -> str:
+    """Feed dos acidentes mais recentes (por data), no estilo creme do site."""
+    if df.empty:
+        return '<div class="chart-empty">Nenhum acidente no período</div>'
+    recentes = df[df["data_publicacao"].notna()].sort_values(
+        "data_publicacao", ascending=False).head(n)
+    if recentes.empty:
+        return '<div class="chart-empty">Nenhum acidente datado no período</div>'
+    itens = ""
+    for _, r in recentes.iterrows():
+        sev = r.get("severidade", "colisao")
+        cor = PALETA_SEV.get(sev, "#8C877C")
+        data_str = r["data_publicacao"].strftime("%d/%m/%y")
+        titulo = str(r["titulo"])
+        titulo = titulo[:78] + "…" if len(titulo) > 78 else titulo
+        local = str(r.get("loc_endereco") or "").split(",")[0].strip()
+        muni = str(r.get("municipio") or "")
+        meta = " · ".join(p for p in [muni, local] if p)
+        url = str(r.get("url") or "")
+        link = (f'<a href="{url}" target="_blank" class="feed-src">ver matéria ↗</a>'
+                if url.startswith("http") else "")
+        itens += (
+            '<div class="feed-item">'
+            f'<span class="feed-date">{data_str}</span>'
+            f'<span class="feed-dot" style="background:{cor}"></span>'
+            '<div class="feed-body">'
+            f'<div class="feed-title">{titulo}</div>'
+            f'<div class="feed-meta">{meta}{" · " if meta and link else ""}{link}</div>'
+            '</div></div>'
+        )
+    return f'<div class="feed-list">{itens}</div>'
 
 
 def _tabela_cruzamentos(cruzamentos: pd.DataFrame) -> str:
@@ -911,6 +999,12 @@ if insights:
         )
     ins_html += "</div>"
     st.markdown(ins_html, unsafe_allow_html=True)
+
+st.markdown("---")
+
+# ── Feed de acidentes recentes ────────────────────────────────────────────────
+st.markdown('<p class="stitle">Acidentes recentes</p>', unsafe_allow_html=True)
+st.markdown(_feed_recentes(df, n=8), unsafe_allow_html=True)
 
 st.markdown("---")
 
