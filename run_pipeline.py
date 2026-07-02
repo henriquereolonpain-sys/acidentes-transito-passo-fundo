@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 
 from scrapers.rdplanalto import scrape as scrape_rdplanalto
 from scrapers.gzh import scrape as scrape_gzh
+from scrapers.uirapuru import scrape as scrape_uirapuru
+from scrapers.tapejara import scrape as scrape_tapejara
 from pipeline.extrator import extrair_localizacao, extrair_municipio
 from pipeline.geocoder import geocodificar
 from pipeline import storage
@@ -41,7 +43,17 @@ def coletar_e_salvar():
         if n.url not in urls_existentes:
             noticias_gzh.append(n)
 
-    noticias_raw = list(noticias_rdp) + noticias_gzh
+    logger.info("Scraping Uirapuru...")
+    noticias_uira = [n for n in scrape_uirapuru(urls_existentes=urls_existentes)
+                     if n.url not in urls_existentes]
+    logger.info(f"uirapuru: {len(noticias_uira)} noticias")
+
+    logger.info("Scraping Radio Tapejara...")
+    noticias_tap = [n for n in scrape_tapejara(urls_existentes=urls_existentes)
+                    if n.url not in urls_existentes]
+    logger.info(f"tapejara: {len(noticias_tap)} noticias")
+
+    noticias_raw = list(noticias_rdp) + noticias_gzh + noticias_uira + noticias_tap
     logger.info(f"Total coletado: {len(noticias_raw)} noticias")
 
     registros = []

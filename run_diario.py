@@ -33,11 +33,12 @@ def main():
     from pipeline import storage
     storage.inicializar()
 
-    # 1. Coleta incremental das 3 fontes de notícias
+    # 1. Coleta incremental das fontes de notícias
     novos_total = 0
     novos_total += _coletar_rdplanalto()
     novos_total += _coletar_uirapuru()
     novos_total += _coletar_gzh()
+    novos_total += _coletar_tapejara()
     logger.info(f"Total de notícias novas: {novos_total}")
 
     if novos_total == 0:
@@ -84,6 +85,14 @@ def _coletar_gzh() -> int:
     urls = storage.buscar_urls_existentes()
     noticias = scrape(max_paginas=15, urls_existentes=urls)  # só páginas iniciais
     return _salvar(noticias, "gzh")
+
+
+def _coletar_tapejara() -> int:
+    from scrapers.tapejara import scrape
+    from pipeline import storage
+    urls = storage.buscar_urls_existentes()
+    noticias = scrape(max_paginas=20, urls_existentes=urls)  # só páginas iniciais no diário
+    return _salvar(noticias, "tapejara")
 
 
 def _salvar(noticias, fonte: str) -> int:

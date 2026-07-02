@@ -17,6 +17,13 @@ _MUNICIPIOS = [
     "Palmeira das Missoes", "Palmeira das Missões", "Serafina Correa",
     "Serafina Corrêa", "Gaurama", "Erebango", "Itatiba do Sul",
     "Viadutos", "Barra do Rio Azul", "Marcelino Ramos",
+    # microrregião de Tapejara (Alto Uruguai / Norte gaúcho)
+    "Sananduva", "Ibiaca", "Ibiaçá", "Ibiraiaras", "Vila Langaro", "Vila Lângaro",
+    "Charrua", "Cacique Doble", "Santa Cecilia do Sul", "Santa Cecília do Sul",
+    "Sao Joao da Urtiga", "São João da Urtiga", "Machadinho",
+    "Maximiliano de Almeida", "Tupanci do Sul", "Caseiros", "Ciriaco", "Ciríaco",
+    "David Canabarro", "Vanini", "Muliterno", "Santo Expedito do Sul",
+    "Nova Alvorada", "Barracao", "Barracão",
 ]
 
 # Compila regex para extração de município (busca no título original com acentos)

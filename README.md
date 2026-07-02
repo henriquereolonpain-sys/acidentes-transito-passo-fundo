@@ -21,6 +21,7 @@ Acidentes de trânsito são noticiados todos os dias pela imprensa local, mas a 
 | [RD Planalto](https://rdplanalto.com) | Notícias (scraping) | 2014–2026, todas as vias | 3.580 |
 | [Rádio Uirapuru](https://rduirapuru.com.br) | Notícias (scraping) | região do Planalto | 2.961 |
 | [GZH Passo Fundo](https://gauchazh.clicrbs.com.br/passo-fundo/) | Notícias (scraping) | 2023–2026 | 831 |
+| [Rádio Tapejara](https://www.radiotapejara.com.br/noticias/assunto/17/acidente) | Notícias (scraping) | Tapejara e microrregião | — |
 | [PRF — Dados Abertos](https://www.gov.br/prf/pt-br/acesso-a-informacao/dados-abertos) | Oficial (CSV) | rodovias federais, 2015–2024 | 1.150 |
 
 Cada acidente preserva os **links das matérias originais** — a fonte é sempre rastreável.

@@ -788,14 +788,19 @@ def _chart_heat_diahora(df_prf) -> str:
             f'{legenda}')
 
 
-def _feed_recentes(df: pd.DataFrame, n: int = 8) -> str:
-    """Feed dos acidentes mais recentes (por data), no estilo creme do site."""
+def _feed_recentes(df: pd.DataFrame, n: int = 8, municipio: str = "Passo Fundo") -> str:
+    """Feed dos acidentes mais recentes de um município (por padrão, Passo Fundo).
+
+    Fixo em Passo Fundo de propósito: as demais cidades (Tapejara e microrregião)
+    aparecem só no mapa, não misturam no feed.
+    """
     if df.empty:
         return '<div class="chart-empty">Nenhum acidente no período</div>'
-    recentes = df[df["data_publicacao"].notna()].sort_values(
+    base = df[df["municipio"] == municipio] if municipio else df
+    recentes = base[base["data_publicacao"].notna()].sort_values(
         "data_publicacao", ascending=False).head(n)
     if recentes.empty:
-        return '<div class="chart-empty">Nenhum acidente datado no período</div>'
+        return f'<div class="chart-empty">Nenhum acidente recente em {municipio}</div>'
     itens = ""
     for _, r in recentes.iterrows():
         sev = r.get("severidade", "colisao")
@@ -876,7 +881,7 @@ st.markdown("""
       <span class="tb-title">Mapa de Acidentes</span>
       <span class="tb-sub">Passo Fundo e região, RS</span>
     </div>
-    <div class="tb-src">RD Planalto · Uirapuru · GZH · PRF (dados abertos)</div>
+    <div class="tb-src">RD Planalto · Uirapuru · GZH · Rádio Tapejara · PRF</div>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -1002,9 +1007,9 @@ if insights:
 
 st.markdown("---")
 
-# ── Feed de acidentes recentes ────────────────────────────────────────────────
-st.markdown('<p class="stitle">Acidentes recentes</p>', unsafe_allow_html=True)
-st.markdown(_feed_recentes(df, n=8), unsafe_allow_html=True)
+# ── Feed de acidentes recentes (só Passo Fundo) ───────────────────────────────
+st.markdown('<p class="stitle">Acidentes recentes · Passo Fundo</p>', unsafe_allow_html=True)
+st.markdown(_feed_recentes(df, n=8, municipio="Passo Fundo"), unsafe_allow_html=True)
 
 st.markdown("---")
 
@@ -1060,7 +1065,7 @@ except Exception as e:
 # ── Footer ────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="footer">
-  Dados: <b>rdplanalto.com</b> · <b>GZH</b> · <b>Uirapuru</b> · <b>PRF / dados abertos gov.br</b>
+  Dados: <b>rdplanalto.com</b> · <b>GZH</b> · <b>Uirapuru</b> · <b>Rádio Tapejara</b> · <b>PRF / dados abertos gov.br</b>
   &nbsp;|&nbsp; Geocodificação: Nominatim (OpenStreetMap) &nbsp;|&nbsp; Projeto_08
 </div>
 <div class="author-credit">
