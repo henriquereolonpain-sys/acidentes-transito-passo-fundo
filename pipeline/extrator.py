@@ -146,11 +146,24 @@ _PADROES = [
     ),
 ]
 
+# Ruído no fim do nome: conectores + qualquer município conhecido (sem acento).
+# Ordena por tamanho decrescente pra casar "passo fundo" antes de "passo".
+_NOISE_MUNI = sorted({_normalizar(m) for m in _MUNICIPIOS}, key=len, reverse=True)
 _RUIDO_FINAL = re.compile(
-    r"\s+(?:passo\s+fundo|em\s+passo|em|no|na|passo|fundo|rs|"
-    r"carazinho|marau|erechim|sarandi|soledade|colorado|coxilha)\s*$",
+    r"\s+(?:" + "|".join(re.escape(w) for w in _NOISE_MUNI) +
+    r"|em|no|na|de|da|do|dos|das|rs|regiao|interior|centro|area|central|"
+    r"proximo|perto|frente)\s*$",
     re.IGNORECASE,
 )
+
+
+def _limpar_ruido(s: str) -> str:
+    """Remove repetidamente conectores/municípios grudados no fim do nome."""
+    prev = None
+    while prev != s:
+        prev = s
+        s = _RUIDO_FINAL.sub("", s).strip()
+    return s
 
 
 def extrair_localizacao(slug: str, municipio: str = "Passo Fundo") -> dict | None:
@@ -166,8 +179,8 @@ def extrair_localizacao(slug: str, municipio: str = "Passo Fundo") -> dict | Non
             continue
 
         if tipo == "cruzamento":
-            rua1 = _RUIDO_FINAL.sub("", m.group("rua1")).strip().title()
-            rua2 = _RUIDO_FINAL.sub("", m.group("rua2")).strip().title()
+            rua1 = _limpar_ruido(m.group("rua1")).title()
+            rua2 = _limpar_ruido(m.group("rua2")).title()
             endereco = f"{rua1} e {rua2}, {municipio}, RS, Brasil"
             return {
                 "tipo": tipo,
@@ -178,20 +191,22 @@ def extrair_localizacao(slug: str, municipio: str = "Passo Fundo") -> dict | Non
             }
 
         if tipo == "rodovia":
-            rod = m.group("rod").upper().replace(" ", "-").replace("--", "-")
+            # normaliza "ers324"/"br 386" -> "ERS-324"/"BR-386" (Nominatim não acha sem hífen)
+            rod = re.sub(r"[\s-]", "", m.group("rod").upper())
+            rod = re.sub(r"^(ERS|BR|RS)(\d+)$", r"\1-\2", rod)
             return {"tipo": tipo, "endereco": f"{rod}, {municipio}, RS, Brasil"}
 
         if tipo == "trevo":
-            trevo = _RUIDO_FINAL.sub("", m.group("trevo")).strip().title()
+            trevo = _limpar_ruido(m.group("trevo")).title()
             return {"tipo": tipo, "endereco": f"Trevo {trevo}, {municipio}, RS, Brasil"}
 
         if tipo == "logradouro":
             tipo_log = m.group("tipo").title()
-            nome = _RUIDO_FINAL.sub("", m.group("nome")).strip().title()
+            nome = _limpar_ruido(m.group("nome")).title()
             return {"tipo": tipo, "endereco": f"{tipo_log} {nome}, {municipio}, RS, Brasil"}
 
         if tipo == "bairro":
-            bairro = _RUIDO_FINAL.sub("", m.group("bairro")).strip().title()
+            bairro = _limpar_ruido(m.group("bairro")).title()
             return {"tipo": tipo, "endereco": f"Bairro {bairro}, {municipio}, RS, Brasil"}
 
     return None
