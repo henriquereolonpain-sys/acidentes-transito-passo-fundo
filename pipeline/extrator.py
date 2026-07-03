@@ -32,13 +32,7 @@ _RE_MUNICIPIO = re.compile(
     re.IGNORECASE,
 )
 
-# Também aceita "em Passo Fundo" vindo do slug normalizado
-_RE_MUNICIPIO_SLUG = re.compile(
-    r"\b(passo fundo|carazinho|marau|erechim|sarandi|soledade|tapejara|"
-    r"sertao|casca|colorado|vila maria|ronda alta|pontao|coxilha|ernestina|"
-    r"gaurama|erebango|viadutos|serafina correa)\b",
-    re.IGNORECASE,
-)
+# _RE_MUNICIPIO_SLUG e _MUNI_NORM são construídos abaixo (após _normalizar)
 
 
 def _normalizar(texto: str) -> str:
@@ -48,6 +42,21 @@ def _normalizar(texto: str) -> str:
 
 def _slug_para_texto(slug: str) -> str:
     return slug.replace("-", " ")
+
+
+# Mapa nome-normalizado -> nome próprio (prefere a variante acentuada) e regex
+# de município no slug — ambos a partir da lista COMPLETA de municípios, para
+# que extrair_municipio reconheça as mesmas cidades que a extração de local.
+_MUNI_NORM = {}
+for _m in _MUNICIPIOS:
+    _k = _normalizar(_m)
+    if _k not in _MUNI_NORM or any(ord(c) > 127 for c in _m):
+        _MUNI_NORM[_k] = _m
+_RE_MUNICIPIO_SLUG = re.compile(
+    r"\b(" + "|".join(re.escape(k) for k in sorted(_MUNI_NORM, key=len, reverse=True))
+    + r")\b",
+    re.IGNORECASE,
+)
 
 
 def extrair_municipio(titulo: str, slug: str) -> str:
@@ -76,28 +85,7 @@ def extrair_municipio(titulo: str, slug: str) -> str:
     texto_slug = _slug_para_texto(_normalizar(slug))
     m2 = _RE_MUNICIPIO_SLUG.search(texto_slug)
     if m2:
-        _mapa = {
-            "passo fundo": "Passo Fundo",
-            "carazinho": "Carazinho",
-            "marau": "Marau",
-            "erechim": "Erechim",
-            "sarandi": "Sarandi",
-            "soledade": "Soledade",
-            "tapejara": "Tapejara",
-            "sertao": "Sertão",
-            "casca": "Casca",
-            "colorado": "Colorado",
-            "vila maria": "Vila Maria",
-            "ronda alta": "Ronda Alta",
-            "pontao": "Pontão",
-            "coxilha": "Coxilha",
-            "ernestina": "Ernestina",
-            "gaurama": "Gaurama",
-            "erebango": "Erebango",
-            "viadutos": "Viadutos",
-            "serafina correa": "Serafina Corrêa",
-        }
-        return _mapa.get(m2.group(1).lower(), "Passo Fundo")
+        return _MUNI_NORM.get(m2.group(1).lower(), "Passo Fundo")
 
     return "Passo Fundo"
 
@@ -166,6 +154,23 @@ def _limpar_ruido(s: str) -> str:
     return s
 
 
+# Fallback a nível de cidade (aproximado) — só quando nenhum local específico
+# casou. Exige um município conhecido no texto (evita casar ruído/estatística).
+_CIDADE_ALT = "|".join(re.escape(w) for w in _NOISE_MUNI)  # normalizados, maiores primeiro
+_PADROES += [
+    ("centro", re.compile(
+        r"(?:centro|area\s+central|regiao\s+central)\s+d[eo]\s+(?P<cidade>"
+        + _CIDADE_ALT + r")\b", re.IGNORECASE)),
+    ("cidade", re.compile(
+        r"interior\s+d[eo]\s+(?P<cidade>" + _CIDADE_ALT + r")\b", re.IGNORECASE)),
+    ("cidade", re.compile(
+        r"\bentre\s+(?P<cidade>" + _CIDADE_ALT + r")\s+e\s+(?:" + _CIDADE_ALT + r")\b",
+        re.IGNORECASE)),
+    ("cidade", re.compile(
+        r"\bem\s+(?P<cidade>" + _CIDADE_ALT + r")\b", re.IGNORECASE)),
+]
+
+
 def extrair_localizacao(slug: str, municipio: str = "Passo Fundo") -> dict | None:
     """
     Extrai localização do slug. Usa o município fornecido nas queries de geocodificação.
@@ -208,5 +213,15 @@ def extrair_localizacao(slug: str, municipio: str = "Passo Fundo") -> dict | Non
         if tipo == "bairro":
             bairro = _limpar_ruido(m.group("bairro")).title()
             return {"tipo": tipo, "endereco": f"Bairro {bairro}, {municipio}, RS, Brasil"}
+
+        if tipo in ("centro", "cidade"):
+            cidade_norm = _normalizar(m.group("cidade")).strip()
+            # Passo Fundo já tem cobertura precisa densa — não empilha centroides lá
+            if cidade_norm == "passo fundo":
+                continue
+            cidade = m.group("cidade").strip().title()
+            if tipo == "centro":
+                return {"tipo": "centro", "endereco": f"Centro, {cidade}, RS, Brasil"}
+            return {"tipo": "cidade", "endereco": f"{cidade}, RS, Brasil"}
 
     return None
