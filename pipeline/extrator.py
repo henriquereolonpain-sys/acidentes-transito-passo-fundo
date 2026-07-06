@@ -105,7 +105,7 @@ _PADROES = [
     # rodovias estaduais/federais
     (
         "rodovia",
-        re.compile(r"(?P<rod>(?:ers|br|rs)\s*-?\s*\d{2,3})", re.IGNORECASE),
+        re.compile(r"(?P<rod>(?:ers|rsc|rst|br|rs)\s*-?\s*\d{2,3})", re.IGNORECASE),
     ),
     # trevo / rotatória (limita a 3 palavras para não capturar descrição do acidente)
     (
@@ -140,7 +140,7 @@ _NOISE_MUNI = sorted({_normalizar(m) for m in _MUNICIPIOS}, key=len, reverse=Tru
 _RUIDO_FINAL = re.compile(
     r"\s+(?:" + "|".join(re.escape(w) for w in _NOISE_MUNI) +
     r"|em|no|na|de|da|do|dos|das|rs|regiao|interior|centro|area|central|"
-    r"proximo|perto|frente)\s*$",
+    r"proximo|perto|frente|passo|fundo|cidade|localidade|trecho|sentido)\s*$",
     re.IGNORECASE,
 )
 
@@ -198,7 +198,7 @@ def extrair_localizacao(slug: str, municipio: str = "Passo Fundo") -> dict | Non
         if tipo == "rodovia":
             # normaliza "ers324"/"br 386" -> "ERS-324"/"BR-386" (Nominatim não acha sem hífen)
             rod = re.sub(r"[\s-]", "", m.group("rod").upper())
-            rod = re.sub(r"^(ERS|BR|RS)(\d+)$", r"\1-\2", rod)
+            rod = re.sub(r"^(ERS|RSC|RST|BR|RS)(\d+)$", r"\1-\2", rod)
             return {"tipo": tipo, "endereco": f"{rod}, {municipio}, RS, Brasil"}
 
         if tipo == "trevo":
