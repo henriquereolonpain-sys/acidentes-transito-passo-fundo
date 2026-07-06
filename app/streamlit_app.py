@@ -402,12 +402,17 @@ def filtrar_prf(df, data_inicio, data_fim, municipios_sel=None) -> pd.DataFrame:
     return df[mask]
 
 
-def filtrar(df, data_inicio, data_fim, municipios, severidades) -> pd.DataFrame:
+def filtrar(df, data_inicio, data_fim, municipios, severidades,
+            incluir_sem_data=False) -> pd.DataFrame:
     mask = pd.Series([True] * len(df), index=df.index)
+    # máscara de período; acidentes sem data (NaT) entram só se o toggle estiver ligado
+    sem_data = df["data_publicacao"].isna()
+    periodo = pd.Series([True] * len(df), index=df.index)
     if data_inicio:
-        mask &= df["data_publicacao"].dt.date >= data_inicio
+        periodo &= df["data_publicacao"].dt.date >= data_inicio
     if data_fim:
-        mask &= df["data_publicacao"].dt.date <= data_fim
+        periodo &= df["data_publicacao"].dt.date <= data_fim
+    mask &= periodo | (sem_data if incluir_sem_data else False)
     if municipios:
         mask &= df["municipio"].isin(municipios)
     if severidades:
@@ -916,6 +921,11 @@ with st.sidebar:
             format="DD/MM/YYYY",
         )
 
+    incluir_sem_data = st.toggle(
+        "Incluir acidentes sem data", value=False,
+        help="Mostra também os acidentes cuja data não foi identificada (ficam fora do filtro de período)",
+    )
+
     municipios_disp = sorted(df_completo["municipio"].dropna().unique().tolist())
     municipios_sel = st.multiselect(
         "Município",
@@ -950,7 +960,8 @@ with st.sidebar:
                   help=f"{prf_stats['ano_min']}–{prf_stats['ano_max']} | {prf_stats['fatais']} fatais")
 
 # ── Filtragem ─────────────────────────────────────────────────────────────────
-df = filtrar(df_completo, data_inicio, data_fim, municipios_sel, severidades_sel)
+df = filtrar(df_completo, data_inicio, data_fim, municipios_sel, severidades_sel,
+             incluir_sem_data=incluir_sem_data)
 
 df_prf_filtrado = None
 if mostrar_prf:
