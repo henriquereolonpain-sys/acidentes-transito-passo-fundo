@@ -81,6 +81,12 @@ def inicializar():
     with _conexao() as con:
         con.execute(_DDL)
         con.execute(_DDL_PRF)
+        # colunas adicionadas depois do schema inicial (idempotente)
+        for col, tipo in [("loc_body_tried", "BOOLEAN DEFAULT FALSE")]:
+            try:
+                con.execute(f"ALTER TABLE acidentes ADD COLUMN {col} {tipo}")
+            except Exception:
+                pass
     logger.info(f"Banco inicializado em {DB_PATH}")
 
 

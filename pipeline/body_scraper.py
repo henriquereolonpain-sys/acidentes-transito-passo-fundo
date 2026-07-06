@@ -260,6 +260,98 @@ def atualizar_artigo(id: int, dados: DadosCorpo):
         con.execute(f"UPDATE acidentes SET {', '.join(updates)} WHERE id = ?", vals)
 
 
+def _lead_texto(html: str) -> str:
+    """Extrai o parágrafo de abertura (onde costuma estar o local)."""
+    soup = BeautifulSoup(html, "html.parser")
+    for tag in soup.find_all(["script", "style", "nav", "header", "footer", "aside"]):
+        tag.decompose()
+    ps = [p.get_text(" ", strip=True) for p in soup.find_all("p")
+          if len(p.get_text(strip=True)) > 40]
+    return " ".join(ps[:3])[:500]
+
+
+def enriquecer_localizacao(limite: int = 80, municipio: str = None,
+                           anos: list = None, delay: float = 0.8) -> dict:
+    """
+    Para acidentes SEM coordenada, lê o corpo da matéria e tenta extrair o
+    local do texto (não só do slug). Geocodifica e atualiza. Marca
+    loc_body_tried=TRUE para não re-buscar.
+    """
+    from pipeline.extrator import extrair_localizacao
+    from pipeline.geocoder import geocodificar
+
+    filtros = ["latitude IS NULL",
+               "(loc_body_tried IS NULL OR loc_body_tried = FALSE)",
+               "severidade IN ('fatal','grave','colisao')"]
+    params = []
+    if municipio:
+        filtros.append("municipio = ?"); params.append(municipio)
+    if anos:
+        placeholders = ",".join(str(int(a)) for a in anos)
+        filtros.append(f"YEAR(data_publicacao) IN ({placeholders})")
+    where = " AND ".join(filtros)
+
+    with _conexao() as con:
+        rows = con.execute(
+            f"SELECT id, url FROM acidentes WHERE {where} ORDER BY data_publicacao DESC "
+            f"LIMIT {int(limite)}", params).fetchall()
+
+    logger.info(f"Localização por corpo: {len(rows)} artigos a tentar")
+    session = requests.Session()
+    session.headers.update(HEADERS)
+    geocache = {}
+    stats = {"total": len(rows), "com_local": 0, "plotados": 0, "erros": 0}
+
+    for i, (id, url) in enumerate(rows, 1):
+        loc = None
+        coords = None
+        try:
+            resp = session.get(url, timeout=15)
+            if resp.status_code == 200:
+                txt = _lead_texto(resp.text)
+                if txt:
+                    loc = extrair_localizacao(txt, municipio or "Passo Fundo")
+        except Exception as e:
+            logger.warning(f"Erro fetch {url}: {e}")
+            stats["erros"] += 1
+
+        if loc:
+            stats["com_local"] += 1
+            end = loc["endereco"]
+            if end in geocache:
+                coords = geocache[end]
+            else:
+                try:
+                    coords = geocodificar(endereco=end, loc_tipo=loc["tipo"],
+                                          rua1=loc.get("rua1"), rua2=loc.get("rua2"),
+                                          municipio=municipio or "Passo Fundo")
+                except Exception:
+                    coords = None
+                geocache[end] = coords
+
+        with _conexao() as con:
+            if loc and coords:
+                con.execute(
+                    "UPDATE acidentes SET loc_tipo=?, loc_endereco=?, loc_rua1=?, loc_rua2=?, "
+                    "latitude=?, longitude=?, geocodificado=TRUE, loc_body_tried=TRUE WHERE id=?",
+                    [loc["tipo"], loc["endereco"], loc.get("rua1"), loc.get("rua2"),
+                     coords[0], coords[1], id])
+                stats["plotados"] += 1
+            elif loc:
+                con.execute(
+                    "UPDATE acidentes SET loc_tipo=?, loc_endereco=?, loc_rua1=?, loc_rua2=?, "
+                    "loc_body_tried=TRUE WHERE id=?",
+                    [loc["tipo"], loc["endereco"], loc.get("rua1"), loc.get("rua2"), id])
+            else:
+                con.execute("UPDATE acidentes SET loc_body_tried=TRUE WHERE id=?", [id])
+
+        if i % 40 == 0 or i == len(rows):
+            logger.info(f"  [{i}/{len(rows)}] local={stats['com_local']} plotados={stats['plotados']}")
+        time.sleep(delay)
+
+    return stats
+
+
 def enriquecer(limite: int = 200, severidades: list = None, delay: float = 1.2) -> dict:
     """
     Busca o corpo dos artigos mais relevantes e atualiza o banco.

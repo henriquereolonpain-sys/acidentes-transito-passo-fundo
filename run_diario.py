@@ -51,6 +51,9 @@ def main():
     # 3. Enriquece graves/fatais novos
     _enriquecer()
 
+    # 3b. Tenta extrair local do corpo dos que ficaram sem coordenada
+    _localizar_por_corpo()
+
     # 4. Deduplicação + confiança
     from pipeline.deduplicar import deduplicar
     from pipeline.confianca import calcular
@@ -144,6 +147,12 @@ def _enriquecer():
     from pipeline.body_scraper import enriquecer
     stats = enriquecer(limite=100, severidades=["fatal", "grave"])
     logger.info(f"Enriquecidos: hora={stats['com_hora']} km={stats['com_km']}")
+
+
+def _localizar_por_corpo():
+    from pipeline.body_scraper import enriquecer_localizacao
+    stats = enriquecer_localizacao(limite=80)
+    logger.info(f"Local por corpo: local={stats['com_local']} plotados={stats['plotados']}")
 
 
 if __name__ == "__main__":
