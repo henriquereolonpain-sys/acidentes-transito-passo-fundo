@@ -19,6 +19,10 @@ _geolocator = Nominatim(
 )
 
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+# Overpass exige User-Agent — sem ele responde 406 Not Acceptable
+_OVERPASS_HEADERS = {
+    "User-Agent": "passo-fundo-acidentes/1.0 (henrique.reolon.pain@gmail.com)"
+}
 
 # Bounding boxes por município (sul, oeste, norte, leste)
 _BBOX_MUNICIPIOS = {
@@ -73,18 +77,25 @@ def _overpass_cruzamento(rua1: str, rua2: str, municipio: str) -> tuple[float, f
 node(w.r1)(w.r2);
 out body;
 """
-    try:
-        time.sleep(1)
-        resp = requests.post(OVERPASS_URL, data={"data": query}, timeout=35)
-        resp.raise_for_status()
-        data = resp.json()
-        elementos = data.get("elements", [])
-        if elementos:
-            el = elementos[0]
-            logger.debug(f"Overpass achou cruzamento '{rua1}' x '{rua2}': ({el['lat']}, {el['lon']})")
-            return (el["lat"], el["lon"])
-    except Exception as e:
-        logger.warning(f"Overpass erro para '{rua1}' x '{rua2}': {e}")
+    for tentativa in range(1, 3):  # o servidor às vezes devolve 504 transitório
+        try:
+            time.sleep(1)
+            resp = requests.post(OVERPASS_URL, data={"data": query},
+                                 headers=_OVERPASS_HEADERS, timeout=40)
+            if resp.status_code in (429, 502, 503, 504):
+                logger.warning(f"Overpass {resp.status_code} (tentativa {tentativa}) — aguarda")
+                time.sleep(5 * tentativa)
+                continue
+            resp.raise_for_status()
+            elementos = resp.json().get("elements", [])
+            if elementos:
+                el = elementos[0]
+                logger.debug(f"Overpass cruzamento '{rua1}' x '{rua2}': ({el['lat']}, {el['lon']})")
+                return (el["lat"], el["lon"])
+            return None  # query OK mas sem nó de interseção
+        except Exception as e:
+            logger.warning(f"Overpass erro '{rua1}' x '{rua2}' (tentativa {tentativa}): {e}")
+            time.sleep(3 * tentativa)
 
     return None
 
