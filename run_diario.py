@@ -64,6 +64,30 @@ def main():
     dur = (datetime.now() - inicio).total_seconds()
     logger.info(f"FIM em {dur:.0f}s — {stats['total']} artigos, {stats['com_coordenada']} com coordenada")
 
+    # 5. Envia o banco atualizado pro GitHub (Streamlit Cloud redeploya sozinho)
+    _commit_push()
+
+
+def _commit_push():
+    """Commita o data/acidentes.duckdb atualizado e envia pro GitHub, se mudou."""
+    import subprocess
+    import os
+    proj = os.path.dirname(os.path.abspath(__file__))
+    # só age se o banco realmente mudou
+    mudou = subprocess.run(["git", "diff", "--quiet", "--", "data/acidentes.duckdb"],
+                           cwd=proj).returncode != 0
+    if not mudou:
+        logger.info("Banco sem mudanças — nada a enviar.")
+        return
+    try:
+        subprocess.run(["git", "add", "data/acidentes.duckdb"], cwd=proj, check=True)
+        msg = f"Atualizacao diaria automatica ({datetime.now():%Y-%m-%d %H:%M})"
+        subprocess.run(["git", "commit", "-m", msg], cwd=proj, check=True)
+        subprocess.run(["git", "push", "origin", "main"], cwd=proj, check=True, timeout=180)
+        logger.info("Banco enviado pro GitHub — Streamlit Cloud vai atualizar sozinho.")
+    except Exception as e:
+        logger.error(f"Falha ao enviar pro GitHub (rode 'git push' na mão): {e}")
+
 
 def _coletar_rdplanalto() -> int:
     from scrapers.rdplanalto import scrape
