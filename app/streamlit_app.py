@@ -4,6 +4,7 @@ Execute com: streamlit run app/streamlit_app.py
 """
 
 import sys
+import html
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -15,6 +16,17 @@ import pandas as pd
 from datetime import date
 
 from pipeline import storage
+
+
+def _safe(valor) -> str:
+    """Escapa texto não-confiável (scrapado de fontes externas) antes de virar HTML."""
+    return html.escape(str(valor)) if valor is not None else ""
+
+
+def _safe_url(u) -> str:
+    """Só permite http(s) em href; qualquer outro esquema (ex.: javascript:) vira '#'."""
+    u = str(u or "")
+    return html.escape(u, quote=True) if u.startswith(("http://", "https://")) else "#"
 
 st.set_page_config(
     page_title="Acidentes — Passo Fundo",
@@ -430,7 +442,7 @@ def _tooltip_html(row) -> str:
     data_str = row["data_publicacao"].strftime("%d/%m/%Y") if pd.notna(row["data_publicacao"]) else ""
     return f"""
     <div style="font-family:'Inter',sans-serif;max-width:240px;padding:2px">
-      <div style="font-weight:600;font-size:12px;line-height:1.3;margin-bottom:4px">{titulo}</div>
+      <div style="font-weight:600;font-size:12px;line-height:1.3;margin-bottom:4px">{_safe(titulo)}</div>
       <div style="font-size:11px;color:{cor};font-weight:600">{cfg.get('label','')}</div>
       <div style="font-size:10px;color:#6b7280;margin-top:2px">{data_str} · {fontes}</div>
       <div style="font-size:10px;color:#9ca3af;margin-top:3px;font-style:italic">clique para ver as matérias</div>
@@ -447,11 +459,12 @@ def _popup_html(row) -> str:
     pares = list(zip(urls, titulos))
 
     if len(pares) == 1:
-        fontes_html = f'<a href="{pares[0][0]}" target="_blank" style="font-size:11px">Ver notícia</a>'
+        fontes_html = (f'<a href="{_safe_url(pares[0][0])}" target="_blank" '
+                       'rel="noopener noreferrer" style="font-size:11px">Ver notícia</a>')
     else:
         links = "".join(
-            f'<li><a href="{u}" target="_blank" style="font-size:11px">'
-            f'{t[:55]}{"..." if len(t)>55 else ""}</a></li>'
+            f'<li><a href="{_safe_url(u)}" target="_blank" rel="noopener noreferrer" '
+            f'style="font-size:11px">{_safe(t[:55])}{"..." if len(t)>55 else ""}</a></li>'
             for u, t in pares
         )
         fontes_html = (
@@ -459,14 +472,15 @@ def _popup_html(row) -> str:
             f"<ul style='margin:2px 0 0 12px;padding:0'>{links}</ul>"
         )
 
+    titulo_curto = row['titulo'][:80] + ('...' if len(row['titulo']) > 80 else '')
     return f"""
     <div style="min-width:240px;max-width:320px">
-      <b style="font-size:13px">{row['titulo'][:80]}{'...' if len(row['titulo'])>80 else ''}</b>
+      <b style="font-size:13px">{_safe(titulo_curto)}</b>
       <hr style="margin:4px 0">
       <small>
-        <b>Severidade:</b> {sev_label}<br>
-        <b>Local:</b> {row.get('loc_endereco','—')}<br>
-        <b>Município:</b> {row.get('municipio','—')}<br>
+        <b>Severidade:</b> {_safe(sev_label)}<br>
+        <b>Local:</b> {_safe(row.get('loc_endereco', '—'))}<br>
+        <b>Município:</b> {_safe(row.get('municipio', '—'))}<br>
         <b>Data:</b> {data_str}<br>
       </small>
       <div style="margin-top:4px">{fontes_html}</div>
@@ -485,9 +499,9 @@ def _popup_prf(row) -> str:
       <hr style="margin:3px 0">
       <small>
         <b>Data:</b> {row['data_acidente'].strftime('%d/%m/%Y') if pd.notna(row['data_acidente']) else '—'} {hora}<br>
-        <b>Severidade:</b> {sev_label}<br>
-        <b>Tipo:</b> {row.get('tipo_acidente','—')}<br>
-        <b>Causa:</b> {row.get('causa_acidente','—')}<br>
+        <b>Severidade:</b> {_safe(sev_label)}<br>
+        <b>Tipo:</b> {_safe(row.get('tipo_acidente', '—'))}<br>
+        <b>Causa:</b> {_safe(row.get('causa_acidente', '—'))}<br>
         <b>Mortos:</b> {int(row.get('mortos',0))} | <b>Feridos graves:</b> {int(row.get('feridos_graves',0))}<br>
         <b>Veículos:</b> {int(row.get('veiculos',0))}
       </small>
@@ -530,7 +544,7 @@ def gerar_insights(df: pd.DataFrame, df_prf) -> list[tuple]:
         br_mais = str(df_prf["br"].value_counts().idxmax())
         n_br = df_prf["br"].value_counts().iloc[0]
         fatais_br = len(df_prf[(df_prf["br"].astype(str) == br_mais) & (df_prf["severidade"] == "fatal")])
-        insights.append((f"<b>BR-{br_mais}</b> · mais acidentes",
+        insights.append((f"<b>BR-{_safe(br_mais)}</b> · mais acidentes",
                          f"{n_br} reg · {fatais_br} fatais"))
 
     # Cruzamento mais perigoso
@@ -538,9 +552,9 @@ def gerar_insights(df: pd.DataFrame, df_prf) -> list[tuple]:
         df_c = df[df["loc_tipo"] == "cruzamento"]
         if not df_c.empty:
             top = df_c["loc_endereco"].value_counts()
-            nome = top.index[0]
+            nome = str(top.index[0])
             nome_curto = nome[:32] + "…" if len(nome) > 32 else nome
-            insights.append((f"Cruzamento crítico: <b>{nome_curto}</b>",
+            insights.append((f"Cruzamento crítico: <b>{_safe(nome_curto)}</b>",
                              f"{top.iloc[0]} acidentes"))
 
     return insights
@@ -815,16 +829,17 @@ def _feed_recentes(df: pd.DataFrame, n: int = 8, municipio: str = "Passo Fundo")
         titulo = titulo[:78] + "…" if len(titulo) > 78 else titulo
         local = str(r.get("loc_endereco") or "").split(",")[0].strip()
         muni = str(r.get("municipio") or "")
-        meta = " · ".join(p for p in [muni, local] if p)
+        meta = " · ".join(_safe(p) for p in [muni, local] if p)
         url = str(r.get("url") or "")
-        link = (f'<a href="{url}" target="_blank" class="feed-src">ver matéria ↗</a>'
+        link = (f'<a href="{_safe_url(url)}" target="_blank" rel="noopener noreferrer" '
+                'class="feed-src">ver matéria ↗</a>'
                 if url.startswith("http") else "")
         itens += (
             '<div class="feed-item">'
             f'<span class="feed-date">{data_str}</span>'
             f'<span class="feed-dot" style="background:{cor}"></span>'
             '<div class="feed-body">'
-            f'<div class="feed-title">{titulo}</div>'
+            f'<div class="feed-title">{_safe(titulo)}</div>'
             f'<div class="feed-meta">{meta}{" · " if meta and link else ""}{link}</div>'
             '</div></div>'
         )
@@ -841,7 +856,7 @@ def _tabela_cruzamentos(cruzamentos: pd.DataFrame) -> str:
             cls = "xt-zero" if v == 0 else "xt-num"
             return f'<td class="{cls}">{v}</td>'
         linhas += (
-            f'<tr><td class="xt-loc">{nome}</td>'
+            f'<tr><td class="xt-loc">{_safe(nome)}</td>'
             f'{_cel(row["Total"])}{_cel(row["Fatais"])}{_cel(row["Graves"])}</tr>'
         )
     return (
@@ -869,7 +884,7 @@ def _chart_causas(df_prf) -> str:
         linhas += (
             '<div style="display:flex;align-items:center;gap:12px">'
             f'<span style="width:150px;flex-shrink:0;font-size:12px;color:#3a352d;'
-            f'text-align:right">{nome}</span>'
+            f'text-align:right">{_safe(nome)}</span>'
             '<div style="flex:1;height:16px;background:#F0EBDF;border-radius:3px;overflow:hidden">'
             f'<div style="width:{pct:.0f}%;height:100%;background:{cor}"></div></div>'
             f'<span style="width:28px;{MONO};font-size:11px;color:#3a352d">{int(val)}</span></div>'
