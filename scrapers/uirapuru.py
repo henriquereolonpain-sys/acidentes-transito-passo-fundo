@@ -170,6 +170,7 @@ def _scrape_categoria(categoria: str, base: str, max_paginas: int,
     session = requests.Session()
     session.headers.update(HEADERS)
     paginas_vazias = 0
+    paginas_sem_novos = 0  # páginas seguidas em que tudo já estava no banco
 
     for pagina in range(1, max_paginas + 1):
         url = base if pagina == 1 else f"{base}page/{pagina}/"
@@ -214,6 +215,18 @@ def _scrape_categoria(categoria: str, base: str, max_paginas: int,
 
         paginas_vazias = 0
         novos = [n for n in noticias if n.url not in urls_vistas]
+
+        # Para cedo quando bate em território já coletado (incremental/diário):
+        # N páginas seguidas só com URLs conhecidas → fim.
+        if not novos:
+            paginas_sem_novos += 1
+            if paginas_sem_novos >= 3:
+                logger.info(f"[uirapuru/{categoria}] 3 paginas seguidas ja no banco — fim")
+                break
+            time.sleep(DELAY_SECONDS)
+            continue
+        paginas_sem_novos = 0
+
         for n in novos:
             urls_vistas.add(n.url)
         todas.extend(novos)
