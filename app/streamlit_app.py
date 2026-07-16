@@ -150,18 +150,27 @@ section[data-testid="stSidebar"] [data-baseweb="select"] > div {
     border-color: #E0DACB !important;
     color: #3a352d !important;
 }
-/* pills do multiselect em preto/dourado — não encolher/cortar o texto */
+/* pills do multiselect em preto/dourado — não encolher/cortar o texto.
+   O baseweb dá overflow:hidden + text-overflow:ellipsis num elemento aninhado
+   do texto e, num layout estreito, corta a 1a letra. Forçamos o tag e TODOS
+   os descendentes (não só os filhos diretos) a não cortar, com respiro à esq. */
 section[data-testid="stSidebar"] [data-baseweb="tag"] {
     background: #15140F !important;
     color: #F2C200 !important;
     max-width: none !important;
     flex-shrink: 0 !important;
+    overflow: visible !important;
+    padding-left: 9px !important;
 }
-section[data-testid="stSidebar"] [data-baseweb="tag"] span {
+section[data-testid="stSidebar"] [data-baseweb="tag"] * {
     color: #F2C200 !important;
     max-width: none !important;
+    width: auto !important;
+    min-width: 0 !important;
     overflow: visible !important;
     text-overflow: clip !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
 }
 /* toggle e radio em dourado */
 section[data-testid="stSidebar"] [data-testid="stCheckbox"] label,
