@@ -92,13 +92,25 @@ def extrair_municipio(titulo: str, slug: str) -> str:
 
 # Padrões de localização em ordem de especificidade
 _PADROES = [
-    # cruzamento entre duas ruas
+    # cruzamento entre duas ruas — "cruzamento das ruas X e Y" (formato do slug)
     (
         "cruzamento",
         re.compile(
             r"cruzamento\s+(?:d[ao]s?\s+)?ruas?\s+"
             r"(?P<rua1>[\w\s]+?)\s+e\s+(?P<rua2>[\w\s]+?)"
             r"(?:\s+(?:na|no|em)\s+[\w\s]+)?$",
+            re.IGNORECASE,
+        ),
+    ),
+    # cruzamento por "esquina com" / "X com Y" / "cruzamento da X com a Y"
+    # (comum no corpo da matéria — usa lookahead, casa no meio do texto)
+    (
+        "cruzamento",
+        re.compile(
+            r"(?:rua|avenida|av|travessa|alameda|estrada)\s+(?P<rua1>[\w\s]+?)"
+            r"\s*[, ]\s*(?:esquina\s+com|cruzamento\s+com|esquina\s+d[ae]|com)\s+(?:a\s+)?"
+            r"(?:rua|avenida|av|travessa|alameda|estrada)\s+(?P<rua2>[\w\s]+?)"
+            r"(?=[,\.;]|\s+(?:em|no|na|proximo|apos|onde|quando|sentido)\b|$)",
             re.IGNORECASE,
         ),
     ),
