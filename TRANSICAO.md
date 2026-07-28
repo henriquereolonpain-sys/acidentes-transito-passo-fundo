@@ -24,6 +24,10 @@ python --version
 
 ## 2. Gerar uma chave SSH nova (não copiar a do PC antigo)
 
+> Se estiver com o Claude Code te ajudando nesta máquina, vale apontar ele
+> pro [`TRANSICAO_SSH.md`](TRANSICAO_SSH.md) — é um briefing focado só
+> nessa parte de autenticação, com troubleshooting dos erros mais comuns.
+
 ```powershell
 ssh-keygen -t ed25519 -C "henrique.reolon.pain@gmail.com"
 ```

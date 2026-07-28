@@ -50,6 +50,20 @@ Cada acidente preserva os **links das matérias originais** — a fonte é sempr
 6. **Confiança** — atribui nível (alta/média/baixa) por concordância entre fontes e consistência interna
 7. **Visualização** — mapa de calor + marcadores por severidade no Streamlit
 
+Os passos 1–6 rodam sozinhos todos os dias (tarefa agendada, ver [`TRANSICAO.md`](TRANSICAO.md) para configurar em uma nova máquina).
+
+## Qualidade de dados — auditoria manual
+
+A extração automática de localização funciona bem, mas tem um limite conhecido: quando a matéria descreve um **cruzamento** ("na Rua X, esquina com a Rua Y"), a extração às vezes captura só a primeira rua e o ponto cai em qualquer lugar dela, em vez de na esquina exata. Para esses casos, existe uma etapa de revisão humana:
+
+```bash
+python corrigir.py
+```
+
+O script identifica os acidentes plotados como "rua" cujo texto sugere um cruzamento e mostra um caso por vez — o trecho da matéria com a menção destacada, o ponto atual no mapa e a notícia original — para você confirmar ou corrigir a coordenada. Cada caso revisado é marcado (`corrigido_manual`) e não volta a aparecer nem é sobrescrito pelo pipeline automático.
+
+> Automação leva a maior parte dos dados a um bom nível de precisão; os casos que mudam uma decisão real de política pública (ex.: onde priorizar um semáforo) passam por essa checagem manual antes de virar destaque.
+
 ## Stack
 
 - **Coleta:** `requests` + `BeautifulSoup`
@@ -106,7 +120,7 @@ Cobrem as partes mais frágeis — extração de localização, classificação 
 
 - [ ] Integrar base de acidentes urbanos da Secretaria de Segurança de Passo Fundo
 - [ ] Melhorar o casamento de acidentes entre fontes diferentes
-- [ ] Atualização automática diária
+- [x] Atualização automática diária
 
 ## Licença
 
