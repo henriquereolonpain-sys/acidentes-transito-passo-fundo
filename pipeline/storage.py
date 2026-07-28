@@ -82,7 +82,8 @@ def inicializar():
         con.execute(_DDL)
         con.execute(_DDL_PRF)
         # colunas adicionadas depois do schema inicial (idempotente)
-        for col, tipo in [("loc_body_tried", "BOOLEAN DEFAULT FALSE")]:
+        for col, tipo in [("loc_body_tried", "BOOLEAN DEFAULT FALSE"),
+                          ("corrigido_manual", "BOOLEAN DEFAULT FALSE")]:
             try:
                 con.execute(f"ALTER TABLE acidentes ADD COLUMN {col} {tipo}")
             except Exception:
