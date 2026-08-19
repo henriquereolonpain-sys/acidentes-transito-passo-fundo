@@ -2,8 +2,8 @@
 # Execute UMA VEZ (clique direito > Executar com PowerShell, ou no terminal):
 #   powershell -ExecutionPolicy Bypass -File agendar_diario.ps1
 #
-# A tarefa roda todo dia às 19:00. Se a máquina estiver desligada nesse horário,
-# ela executa assim que a máquina ligar (StartWhenAvailable).
+# A tarefa roda toda semana, domingo às 19:00. Se a máquina estiver desligada
+# nesse horário, ela executa assim que a máquina ligar (StartWhenAvailable).
 # Para remover:  Unregister-ScheduledTask -TaskName "AcidentesPF-Diario" -Confirm:$false
 
 $ErrorActionPreference = "Stop"
@@ -19,8 +19,8 @@ Write-Host "Python:  $python"
 # Ação: rodar runs\run_diario.py no diretório do projeto
 $action = New-ScheduledTaskAction -Execute $python -Argument "runs\run_diario.py" -WorkingDirectory $projeto
 
-# Gatilho: diário às 19:00
-$trigger = New-ScheduledTaskTrigger -Daily -At 19:00
+# Gatilho: semanal, domingo às 19:00
+$trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Sunday -At 19:00
 
 # Configurações: roda se perdeu o horário (máquina estava desligada), sem exigir AC
 $settings = New-ScheduledTaskSettingsSet `
@@ -36,11 +36,11 @@ Register-ScheduledTask `
     -Action $action `
     -Trigger $trigger `
     -Settings $settings `
-    -Description "Coleta diária de acidentes de Passo Fundo (notícias + geocoding + dedup)" `
+    -Description "Coleta semanal de acidentes de Passo Fundo (noticias + geocoding + dedup)" `
     -Force | Out-Null
 
 Write-Host ""
-Write-Host "Tarefa 'AcidentesPF-Diario' registrada. Roda todo dia as 19:00." -ForegroundColor Green
+Write-Host "Tarefa 'AcidentesPF-Diario' registrada. Roda toda semana (domingo as 19:00)." -ForegroundColor Green
 Write-Host "Para rodar agora e testar:  Start-ScheduledTask -TaskName 'AcidentesPF-Diario'"
 Write-Host "Para ver o status:          Get-ScheduledTask -TaskName 'AcidentesPF-Diario'"
 Write-Host "Para remover:               Unregister-ScheduledTask -TaskName 'AcidentesPF-Diario' -Confirm:`$false"
