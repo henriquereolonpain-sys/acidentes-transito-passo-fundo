@@ -3,7 +3,12 @@ Roda só geocodificação + deduplicação no que já está no banco.
 Útil quando já coletamos os artigos e só precisamos processar.
 """
 import logging
+import os
 import sys
+
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _ROOT)
+os.chdir(_ROOT)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", stream=sys.stdout)
 logger = logging.getLogger(__name__)

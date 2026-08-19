@@ -1,9 +1,14 @@
 """
 Coleta ou retoma o scraping do GZH Passo Fundo.
-Execute com: python run_gzh.py [pagina_inicio]
+Execute com: python runs/run_gzh.py [pagina_inicio]
 """
 import logging
+import os
 import sys
+
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _ROOT)
+os.chdir(_ROOT)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", stream=sys.stdout)
 

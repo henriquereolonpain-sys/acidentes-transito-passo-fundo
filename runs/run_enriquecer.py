@@ -1,10 +1,15 @@
 """
 Enriquece artigos com dados do corpo: hora, km, vítima, causa.
-Execute com: python run_enriquecer.py [limite]
+Execute com: python runs/run_enriquecer.py [limite]
   limite: quantos artigos processar (padrão: 200, use 0 para todos os fatais)
 """
 import logging
+import os
 import sys
+
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _ROOT)
+os.chdir(_ROOT)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", stream=sys.stdout)
 

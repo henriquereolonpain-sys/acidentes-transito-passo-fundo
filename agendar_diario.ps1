@@ -11,13 +11,13 @@ $ErrorActionPreference = "Stop"
 # Caminhos absolutos
 $projeto = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $python  = (Get-Command python).Source
-$script  = Join-Path $projeto "run_diario.py"
+$script  = Join-Path $projeto "runs\run_diario.py"
 
 Write-Host "Projeto: $projeto"
 Write-Host "Python:  $python"
 
-# Ação: rodar run_diario.py no diretório do projeto
-$action = New-ScheduledTaskAction -Execute $python -Argument "run_diario.py" -WorkingDirectory $projeto
+# Ação: rodar runs\run_diario.py no diretório do projeto
+$action = New-ScheduledTaskAction -Execute $python -Argument "runs\run_diario.py" -WorkingDirectory $projeto
 
 # Gatilho: diário às 19:00
 $trigger = New-ScheduledTaskTrigger -Daily -At 19:00

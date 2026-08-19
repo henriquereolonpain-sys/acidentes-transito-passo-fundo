@@ -1,15 +1,20 @@
 """
 Baixa e carrega dados da PRF para Passo Fundo e região.
-Execute com: python run_prf.py [ano_inicio] [ano_fim]
+Execute com: python runs/run_prf.py [ano_inicio] [ano_fim]
 
 Exemplos:
-  python run_prf.py              # 2015 a 2024 (padrão)
-  python run_prf.py 2020 2024    # só esses anos
-  python run_prf.py 2024 2024    # só 2024
+  python runs/run_prf.py              # 2015 a 2024 (padrão)
+  python runs/run_prf.py 2020 2024    # só esses anos
+  python runs/run_prf.py 2024 2024    # só 2024
 """
 
 import logging
+import os
 import sys
+
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _ROOT)
+os.chdir(_ROOT)
 
 logging.basicConfig(
     level=logging.INFO,

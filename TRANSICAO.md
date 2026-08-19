@@ -82,7 +82,7 @@ Abre em `http://localhost:8501`. Se carregar o mapa com os dados, está tudo cer
 ## 6. Testar o pipeline diário manualmente
 
 ```powershell
-python run_diario.py
+python runs/run_diario.py
 ```
 Acompanha `data/diario.log`. No fim, deve aparecer "Banco enviado pro
 GitHub". Se aparecer erro de push, confere se a chave SSH foi mesmo
@@ -93,7 +93,7 @@ adicionada no GitHub (passo 2).
 ```powershell
 $projeto = (Get-Location).Path
 $python = (Get-Command python).Source
-$action = New-ScheduledTaskAction -Execute $python -Argument "run_diario.py" -WorkingDirectory $projeto
+$action = New-ScheduledTaskAction -Execute $python -Argument "runs\run_diario.py" -WorkingDirectory $projeto
 $trigger = New-ScheduledTaskTrigger -Daily -At 19:00
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -DontStopOnIdleEnd -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Hours 1)
 Register-ScheduledTask -TaskName "AcidentesPF-Diario" -Action $action -Trigger $trigger -Settings $settings -Description "Coleta diaria de acidentes de Passo Fundo (noticias + geocoding + dedup + push)" -Force | Out-Null
@@ -127,7 +127,7 @@ E, opcionalmente, remove a chave SSH antiga do GitHub
 
 - `data/prf_cache/` (CSVs brutos da PRF, ~200MB) — os dados já estão
   resumidos dentro do banco versionado. Se precisar reconstruir do zero
-  algum dia: `python run_prf.py`.
+  algum dia: `python runs/run_prf.py`.
 - Arquivos `.log` em `data/` — descartáveis.
 - A chave SSH antiga — de propósito, cada máquina tem a sua (ver acima).
 

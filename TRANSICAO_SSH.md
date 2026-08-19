@@ -8,7 +8,7 @@
 ## Situação
 
 Este repositório (`acidentes-transito-passo-fundo`) tem uma **rotina diária
-automatizada** (`run_diario.py`, disparada por uma tarefa agendada do
+automatizada** (`runs/run_diario.py`, disparada por uma tarefa agendada do
 Windows) que faz `git commit` + `git push` sozinha todo dia. Isso exige que
 a máquina que roda a tarefa tenha uma **chave SSH cadastrada no GitHub** do
 usuário (`henriquereolonpain-sys`), sem senha na chave (a tarefa roda sem
@@ -61,7 +61,7 @@ Remote do repositório: `git@github.com:henriquereolonpain-sys/acidentes-transit
    git push origin main
    git log --oneline -1   # confirma que subiu
    ```
-   Se subiu, a automação (`run_diario.py` → `_commit_push()`) vai funcionar
+   Se subiu, a automação (`runs/run_diario.py` → `_commit_push()`) vai funcionar
    igual, porque usa exatamente o mesmo mecanismo (`git push` via subprocess,
    sem token nem senha embutida — depende só da chave SSH do sistema).
 

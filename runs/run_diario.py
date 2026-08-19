@@ -5,12 +5,20 @@ graves/fatais novos, deduplica e recalcula a confiança.
 Tudo incremental — o scraper para ao bater em território já coletado e
 o geocoder/enriquecimento só processam o que ainda não foi processado.
 
-Execute manualmente:  python run_diario.py
+Execute manualmente:  python runs/run_diario.py
 Ou agende (ver agendar_diario.ps1).
 """
-import logging
+import os
 import sys
 from datetime import datetime
+
+# Garante que a raiz do projeto esteja no sys.path e seja o cwd,
+# independente de onde/como este script foi chamado.
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _ROOT)
+os.chdir(_ROOT)
+
+import logging
 
 LOG_PATH = "data/diario.log"
 logging.basicConfig(
@@ -71,8 +79,7 @@ def main():
 def _commit_push():
     """Commita o data/acidentes.duckdb atualizado e envia pro GitHub, se mudou."""
     import subprocess
-    import os
-    proj = os.path.dirname(os.path.abspath(__file__))
+    proj = _ROOT
     # só age se o banco realmente mudou
     mudou = subprocess.run(["git", "diff", "--quiet", "--", "data/acidentes.duckdb"],
                            cwd=proj).returncode != 0

@@ -4,10 +4,15 @@ Processa o banco em sequência:
 2. Enriquece artigos fatais/graves com hora, km e vítima do corpo
 3. Roda deduplicação
 
-Execute com: python run_processar.py
+Execute com: python runs/run_processar.py
 """
 import logging
+import os
 import sys
+
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _ROOT)
+os.chdir(_ROOT)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", stream=sys.stdout)
 logger = logging.getLogger(__name__)

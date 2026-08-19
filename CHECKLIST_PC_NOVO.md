@@ -30,13 +30,13 @@ estão em [`TRANSICAO.md`](TRANSICAO.md) (roteiro completo) e
 
 ## Automação diária
 
-- [ ] Testar na mão primeiro: `python run_diario.py` → conferir que termina com
+- [ ] Testar na mão primeiro: `python runs/run_diario.py` → conferir que termina com
       "Banco enviado pro GitHub" no `data/diario.log`
 - [ ] Registrar a tarefa agendada:
   ```powershell
   $projeto = (Get-Location).Path
   $python = (Get-Command python).Source
-  $action = New-ScheduledTaskAction -Execute $python -Argument "run_diario.py" -WorkingDirectory $projeto
+  $action = New-ScheduledTaskAction -Execute $python -Argument "runs\run_diario.py" -WorkingDirectory $projeto
   $trigger = New-ScheduledTaskTrigger -Daily -At 19:00
   $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -DontStopOnIdleEnd -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Hours 1)
   Register-ScheduledTask -TaskName "AcidentesPF-Diario" -Action $action -Trigger $trigger -Settings $settings -Force

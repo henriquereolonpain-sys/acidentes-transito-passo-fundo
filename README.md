@@ -80,7 +80,7 @@ Os passos 1–6 rodam sozinhos todos os dias (tarefa agendada, ver [`TRANSICAO.m
 A extração automática de localização funciona bem, mas tem um limite conhecido: quando a matéria descreve um **cruzamento** ("na Rua X, esquina com a Rua Y"), a extração às vezes captura só a primeira rua e o ponto cai em qualquer lugar dela, em vez de na esquina exata. Para esses casos, existe uma etapa de revisão humana:
 
 ```bash
-python corrigir.py
+python runs/corrigir.py
 ```
 
 O script identifica os acidentes plotados como "rua" cujo texto sugere um cruzamento e mostra um caso por vez — o trecho da matéria com a menção destacada, o ponto atual no mapa e a notícia original — para você confirmar ou corrigir a coordenada. Cada caso revisado é marcado (`corrigido_manual`) e não volta a aparecer nem é sobrescrito pelo pipeline automático.
@@ -116,9 +116,9 @@ O app abre em `http://localhost:8501`.
 ### Reconstruir os dados do zero (opcional)
 
 ```bash
-python run_pipeline.py    # scraping + geocoding + dedup + confiança
-python run_prf.py         # baixa e integra os dados da PRF (via gdown)
-python run_diario.py      # atualização incremental (só o que é novo)
+python runs/run_pipeline.py    # scraping + geocoding + dedup + confiança
+python runs/run_prf.py         # baixa e integra os dados da PRF (via gdown)
+python runs/run_diario.py      # atualização incremental (só o que é novo)
 ```
 
 ## Estrutura
@@ -128,7 +128,8 @@ scrapers/        coletores por fonte (rdplanalto, uirapuru, gzh, prf)
 pipeline/        extração, geocoding, storage, dedup, enriquecimento, confiança
 app/             dashboard Streamlit
 tests/           testes das funções de extração e classificação
-run_*.py         scripts de orquestração
+runs/            scripts de orquestração (run_*.py, corrigir.py)
+checks/          scripts avulsos de inspeção/debug (check_*.py, não versionados)
 ```
 
 ## Testes

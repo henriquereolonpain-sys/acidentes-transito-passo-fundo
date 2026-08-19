@@ -5,7 +5,12 @@ Reclassifica a severidade de TODOS os artigos (sem baixar nada):
 3. Sobe a severidade quando os números confirmam (mortos>0 -> fatal, feridos>0 -> grave)
 """
 import logging
+import os
 import sys
+
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _ROOT)
+os.chdir(_ROOT)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", stream=sys.stdout)
 logger = logging.getLogger(__name__)

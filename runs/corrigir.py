@@ -3,7 +3,7 @@
 Correção interativa de acidentes plotados no MEIO DA RUA que na verdade são
 CRUZAMENTOS (o texto da matéria menciona "esquina com" / "cruzamento com").
 
-Rode:  python corrigir.py
+Rode:  python runs/corrigir.py
 
 Para cada caso, mostra o trecho da matéria (com a menção de esquina destacada)
 e o local atual. Você responde:
@@ -24,7 +24,9 @@ import sys
 if os.name == "nt":
     os.system("")  # habilita cores ANSI no Windows 10+
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _ROOT)
+os.chdir(_ROOT)
 
 import duckdb
 from pipeline.storage import DB_PATH

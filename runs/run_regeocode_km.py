@@ -4,8 +4,13 @@ usando a referência km->coordenada da PRF. Move o ponto do centro da via
 para a posição exata do km. Pure local lookup — sem rede.
 """
 import logging
+import os
 import re
 import sys
+
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _ROOT)
+os.chdir(_ROOT)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", stream=sys.stdout)
 logger = logging.getLogger(__name__)

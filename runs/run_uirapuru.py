@@ -1,10 +1,15 @@
 """
 Coleta notícias da Rádio Uirapuru e insere no banco.
 Salva incrementalmente após cada categoria para não perder dados em caso de queda.
-Execute com: python run_uirapuru.py
+Execute com: python runs/run_uirapuru.py
 """
 import logging
+import os
 import sys
+
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _ROOT)
+os.chdir(_ROOT)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", stream=sys.stdout)
 
