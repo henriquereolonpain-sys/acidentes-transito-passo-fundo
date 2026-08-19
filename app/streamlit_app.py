@@ -1097,6 +1097,21 @@ try:
 except Exception as e:
     st.error(f"Erro na tabela: {e}")
 
+# ── Disclaimer — ausência de dados oficiais do município ─────────────────────
+with st.expander("ℹ️ Por que os dados vêm de notícias, e não da Prefeitura"):
+    st.markdown("""
+Em resposta ao **Pedido de Informação nº 52/2026** (Vereadora Marina Bernardes),
+a Prefeitura de Passo Fundo confirmou, pelo
+[**Ofício nº 199/2026-GAB**](https://github.com/henriquereolonpain-sys/acidentes-transito-passo-fundo/blob/main/docs/oficio-199-2026-pedido-52.pdf)
+(19/08/2026), que **não existe hoje uma base digital consultável de acidentes de trânsito** no município:
+o Boletim de Ocorrências digital ainda está em implementação, os Agentes de Trânsito só registram
+acidentes sem vítima (dano material), e os casos com ferido ou óbito na área urbana são atribuição
+da Brigada Militar, não da Prefeitura.
+
+Por isso este painel reconstrói o panorama a partir de notícias de veículos locais, cruzadas com a
+base aberta da PRF (rodovias federais) — cada acidente aqui preserva o link da matéria original.
+""")
+
 # ── Footer ────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="footer">

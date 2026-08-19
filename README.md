@@ -26,6 +26,29 @@ Acidentes de trânsito são noticiados todos os dias pela imprensa local, mas a 
 
 Cada acidente preserva os **links das matérias originais** — a fonte é sempre rastreável.
 
+## Por que não usamos dados oficiais do município
+
+Em agosto/2026, por meio da Vereadora Marina Bernardes, foi protocolado o
+**Pedido de Informação nº 52/2026** solicitando à Prefeitura de Passo Fundo
+data, horário, local, classificação, veículos envolvidos e número de feridos
+dos acidentes de trânsito do município.
+
+A resposta — [**Ofício nº 199/2026-GAB**](docs/oficio-199-2026-pedido-52.pdf),
+assinada pelo prefeito Pedro Almeida em 19/08/2026 — confirma a lacuna que
+motiva este projeto:
+
+- O **Boletim de Ocorrências digital** da Secretaria de Segurança Pública e
+  Transportes ainda está em implementação; hoje só existe o boletim físico,
+  preenchido em papel pelos Agentes de Trânsito, e por isso **não é possível
+  extrair os dados solicitados**.
+- Os Agentes de Trânsito municipais só registram acidentes **sem vítima**
+  (dano material). Acidentes com ferido ou óbito na área urbana são
+  atribuição da **Brigada Militar**, não da Prefeitura.
+
+Ou seja: não existe hoje, em nenhum órgão público, uma base estruturada e
+consultável de acidentes de trânsito em Passo Fundo — daí a necessidade de
+reconstruir esse panorama a partir de notícias e da base federal da PRF.
+
 ## Como funciona
 
 ```
@@ -118,7 +141,8 @@ Cobrem as partes mais frágeis — extração de localização, classificação 
 
 ## Roadmap
 
-- [ ] Integrar base de acidentes urbanos da Secretaria de Segurança de Passo Fundo
+- [ ] Pedido de informação à Brigada Militar (dados de acidentes com vítima/óbito na área urbana — ver [nota acima](#por-que-não-usamos-dados-oficiais-do-município))
+- [ ] Integrar base de acidentes urbanos da Secretaria de Segurança de Passo Fundo, quando o Boletim de Ocorrências digital estiver disponível
 - [ ] Melhorar o casamento de acidentes entre fontes diferentes
 - [x] Atualização automática diária
 
