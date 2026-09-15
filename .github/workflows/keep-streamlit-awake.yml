@@ -1,0 +1,24 @@
+name: Keep Streamlit app awake
+
+# O Streamlit Community Cloud hiberna o app depois de um tempo sem visitas.
+# Esse workflow só faz uma requisição periódica pra simular uma visita e
+# evitar que ele durma, sem precisar que alguém abra o link manualmente.
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # a cada 6 horas
+  workflow_dispatch:  # permite rodar manualmente pela aba Actions
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping do app no Streamlit Cloud
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 90 https://acidentes-transito-pf.streamlit.app/)
+          echo "HTTP status: $STATUS"
+          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
+            echo "App respondeu normalmente."
+          else
+            echo "App retornou status $STATUS — pode estar hibernando ou precisar de wake-up manual."
+          fi

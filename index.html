@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa de Acidentes de Trânsito — Passo Fundo, RS</title>
+<meta name="description" content="Pipeline que cruza 7.300+ matérias de jornalismo local com dados oficiais da PRF pra mapear acidentes de trânsito em Passo Fundo, RS, de 2014 a 2026.">
+<style>
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background: #f8fafc;
+        color: #1e293b;
+        line-height: 1.55;
+    }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 3rem 1.5rem 4rem; }
+    .eyebrow {
+        display: inline-block;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #0f766e;
+        background: #ccfbf1;
+        border: 1px solid #99f6e4;
+        border-radius: 999px;
+        padding: 0.3rem 0.7rem;
+        margin-bottom: 1rem;
+    }
+    h1 { font-size: 1.9rem; font-weight: 800; color: #0f172a; margin: 0 0 0.75rem; line-height: 1.25; }
+    .lead { font-size: 1.02rem; color: #64748b; margin: 0 0 1.25rem; max-width: 640px; }
+    .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: #0d9488;
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 0.95rem;
+        padding: 0.75rem 1.3rem;
+        border-radius: 8px;
+        text-decoration: none;
+        box-shadow: 0 4px 14px rgba(13,148,136,0.28);
+        transition: transform .15s ease, background .15s ease;
+    }
+    .cta:hover { background: #0f766e; transform: translateY(-1px); }
+    .wake-note { font-size: 0.8rem; color: #94a3b8; margin: 0.6rem 0 2.5rem; }
+    h2 { font-size: 1.15rem; color: #0f172a; margin: 2.2rem 0 0.75rem; }
+    p { color: #475569; font-size: 0.95rem; }
+    strong { color: #0f172a; }
+    ul { color: #475569; font-size: 0.95rem; padding-left: 1.2rem; }
+    li { margin: 0.3rem 0; }
+    .stats { display: flex; gap: 1.5rem; flex-wrap: wrap; margin: 1.25rem 0 1.75rem; }
+    .stat-num { font-size: 1.4rem; font-weight: 800; color: #0f766e; }
+    .stat-label { font-size: 0.78rem; color: #64748b; }
+    .card {
+        background: #f0fdfa;
+        border: 1px solid #99f6e4;
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        margin: 1.5rem 0;
+        font-size: 0.9rem;
+        color: #134e4a;
+    }
+    .card b { color: #134e4a; }
+    .card a { color: #0f766e; }
+    .links { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid #e2e8f0; font-size: 0.85rem; }
+    .links a { color: #0d9488; text-decoration: none; }
+    .links a:hover { text-decoration: underline; }
+    footer { margin-top: 2rem; font-size: 0.75rem; color: #94a3b8; }
+    a { color: #0d9488; }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <span class="eyebrow">Projeto de portfólio · Jornalismo de dados</span>
+    <h1>Mapa de Acidentes de Trânsito — Passo Fundo, RS</h1>
+    <p class="lead">Pipeline que agrega 7.300+ matérias jornalísticas de 3 veículos locais e 1.150 registros oficiais da PRF pra mapear acidentes de trânsito em Passo Fundo e região, de 2014 a 2026. Geocodificação automática, deduplicação cross-source e um mapa de calor navegável.</p>
+
+    <a class="cta" href="https://acidentes-transito-pf.streamlit.app/" target="_blank" rel="noopener">Ver mapa interativo →</a>
+    <p class="wake-note">O app roda no Streamlit Cloud gratuito, que hiberna depois de um tempo sem visitas. Se a primeira carga demorar um pouco, é isso — ele está "acordando", não travado.</p>
+
+    <div class="stats">
+        <div><div class="stat-num">7.300+</div><div class="stat-label">Matérias coletadas</div></div>
+        <div><div class="stat-num">1.150</div><div class="stat-label">Registros oficiais da PRF</div></div>
+        <div><div class="stat-num">2014–2026</div><div class="stat-label">Série histórica</div></div>
+    </div>
+
+    <h2>Como funciona</h2>
+    <p>Sete etapas automatizadas, rodando sozinhas todos os dias: scraping das notícias → extração de localização com NLP em PT-BR → geocodificação via Nominatim/Overpass → enriquecimento de matérias graves/fatais → deduplicação entre fontes → score de confiança → dashboard com mapa de calor, camadas por severidade e heatmap horário.</p>
+    <ul>
+        <li><strong>RD Planalto</strong>, <strong>Rádio Uirapuru</strong> e <strong>GZH Passo Fundo</strong> — notícias via scraping, 2014–2026</li>
+        <li><strong>PRF — Dados Abertos</strong> — base oficial, rodovias federais, 2015–2024</li>
+    </ul>
+
+    <h2>Um buraco no dado público</h2>
+    <p>Em agosto de 2026, a vereadora Marina Bernardes protocolou um Pedido de Informação à Prefeitura de Passo Fundo pedindo os dados oficiais de acidentes do município. A resposta confirmou o motivo deste projeto existir:</p>
+    <div class="card">
+        O Boletim de Ocorrências digital ainda está em implementação — hoje só existe boletim físico, em papel. E os Agentes de Trânsito municipais só registram acidentes sem vítima; acidentes com ferido ou óbito na área urbana são atribuição da Brigada Militar, não da Prefeitura. Não existe, hoje, uma base pública estruturada de acidentes em Passo Fundo.
+        <br><br>
+        <a href="https://github.com/henriquereolonpain-sys/acidentes-transito-passo-fundo/blob/main/docs/oficio-199-2026-pedido-52.pdf" target="_blank" rel="noopener">Ver o Ofício nº 199/2026-GAB (PDF) →</a>
+    </div>
+    <p>Daí a abordagem deste projeto: reconstruir esse panorama a partir de notícias e da base federal da PRF, já que nenhum órgão municipal tem o dado consolidado.</p>
+
+    <div class="links">
+        <a href="https://github.com/henriquereolonpain-sys/acidentes-transito-passo-fundo">Repositório no GitHub</a> · pipeline completo, código dos scrapers e metodologia
+    </div>
+
+    <footer>Henrique Pain · Projeto de portfólio / uso educacional</footer>
+</div>
+</body>
+</html>
